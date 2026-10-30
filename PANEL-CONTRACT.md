@@ -47,13 +47,15 @@ byte-for-byte unchanged: no `here` key, no `window` fields.
 
 `--here auto` takes the active window (`hyprctl activewindow -j`), then every window in
 Hyprland's focus history (`hyprctl clients -j`, `focusHistoryID` 0 first), and uses the first
-whose folder is an in-scope project. A window's folder comes from its pid's `/proc`
-descendants: the pane path of a `tmux: client` descendant (`tmux display-message -c <its tty>
--p '#{pane_current_path}'`), else the cwd of the deepest descendant (ties → newest). Passed
-over: Backstory's own panel window (class `org.quickshell`, title `backstory`), a browser
-window (its own process is chromium, chrome, brave, vivaldi, edge, helium, firefox, zen or
-librewolf, whose descendants are tabs and extension helpers), a window with no usable folder,
-and a folder outside `BACKSTORY_PROJECT_ROOTS`. When no window qualifies, or `hyprctl`/`tmux` is missing or
+whose folder is an in-scope project. A window's folder comes from its pid's `/proc` descendants:
+the pane path of a `tmux: client` descendant (`tmux display-message -c <its tty> -p
+'#{pane_current_path}'`), else herdr's focused pane for a `herdr` client descendant (`herdr
+[--session NAME] api snapshot`, its `foreground_cwd`, else `cwd`; a `--remote` client is
+skipped), else the cwd of the deepest descendant (ties → newest). Passed over: Backstory's own
+panel window (class `org.quickshell`, title `backstory`), a browser window (its own process is
+chromium, chrome, brave, vivaldi, edge, helium, firefox, zen or librewolf, whose descendants are
+tabs and extension helpers), a window with no usable folder, and a folder outside
+`BACKSTORY_PROJECT_ROOTS`. When no window qualifies, or `hyprctl`/`tmux`/`herdr` is missing or
 fails, it degrades to `source: "recent"`: never a non-zero exit, stdout is always valid JSON.
 
 With `--here auto` every `ProjectSummary` (standalone or group child) also carries `window`:

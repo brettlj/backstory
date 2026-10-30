@@ -27,10 +27,13 @@ const (
 	hereSourceRecent  = "recent"
 )
 
-// External-command tunables. hyprctl and tmux are looked up on PATH.
+// External-command tunables. hyprctl, tmux and herdr are looked up on PATH.
 const (
 	hyprctlBin = "hyprctl"
 	tmuxBin    = "tmux"
+	herdrBin   = "herdr"
+	// herdrClientComm is a herdr client's comm, in the terminal it runs in.
+	herdrClientComm = "herdr"
 	// hereCommandTimeout bounds each hyprctl/tmux call so a wedged compositor
 	// can never hang the panel's data fetch.
 	hereCommandTimeout = 3 * time.Second
@@ -263,6 +266,61 @@ func isTmuxClient(comm string) bool {
 	return strings.HasPrefix(comm, tmuxClientCommPrefix) && strings.HasSuffix(comm, tmuxClientCommSuffix)
 }
 
+// herdrFocusedFolder asks the herdr server that client pid is attached to
+// for its focused pane's folder (the foreground process's, else the pane's).
+// herdr, like tmux, runs shells and agents under its server, so the client's
+// own window holds no useful folder. A `--remote` client shows another
+// machine's panes, whose folders are not projects here: ok is false. The
+// server has one focused pane, shared by all its clients.
+func herdrFocusedFolder(pid int) (string, bool) {
+	var args []string
+	if b, err := os.ReadFile(procPath(pid, "cmdline")); err == nil { //nolint:gosec // path built from an int pid
+		argv := strings.Split(strings.TrimRight(string(b), "\x00"), "\x00")
+		for i := 1; i < len(argv); i++ {
+			switch argv[i] {
+			case "--remote":
+				return "", false
+			case "--session":
+				if i+1 < len(argv) {
+					i++
+					args = append(args, "--session", argv[i])
+				}
+			}
+		}
+	}
+	out, err := runCommand(herdrBin, append(args, "api", "snapshot")...)
+	if err != nil {
+		return "", false
+	}
+	var resp struct {
+		Result struct {
+			Snapshot struct {
+				FocusedPaneID string `json:"focused_pane_id"`
+				Panes         []struct {
+					PaneID        string `json:"pane_id"`
+					CWD           string `json:"cwd"`
+					ForegroundCWD string `json:"foreground_cwd"`
+				} `json:"panes"`
+			} `json:"snapshot"`
+		} `json:"result"`
+	}
+	if json.Unmarshal(out, &resp) != nil {
+		return "", false
+	}
+	snap := resp.Result.Snapshot
+	for _, p := range snap.Panes {
+		if p.PaneID != snap.FocusedPaneID {
+			continue
+		}
+		for _, dir := range []string{p.ForegroundCWD, p.CWD} {
+			if usableProjectDir(dir) {
+				return dir, true
+			}
+		}
+	}
+	return "", false
+}
+
 // folderOfWindowPID resolves the folder a window's terminal is in: the pane
 // path of a tmux client descendant (asked of tmux by the client's tty), else
 // the cwd of the deepest descendant (ties → newest). ok is false when the
@@ -302,6 +360,14 @@ func folderOfWindowPID(pid int) (string, bool) {
 		out, err := tmuxCommand(tmuxServerArgs(d.pid), "display-message", "-c", tty, "-p", "#{pane_current_path}")
 		if p := strings.TrimSpace(string(out)); err == nil && usableProjectDir(p) {
 			return p, true
+		}
+	}
+	for _, d := range desc {
+		if d.comm != herdrClientComm {
+			continue
+		}
+		if dir, ok := herdrFocusedFolder(d.pid); ok {
+			return dir, true
 		}
 	}
 	// Deepest descendant whose cwd is readable (ties → newest).

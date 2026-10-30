@@ -656,3 +656,54 @@ func TestHereAutoWalksFocusHistory(t *testing.T) {
 		}
 	})
 }
+
+// TestHereAutoHerdrClientUsesFocusedPane: herdr, like tmux, runs shells and
+// agents under its own server, so a terminal window holds only the herdr
+// client (in its start folder). Seen on a desktop: with herdr focused, the
+// bar never followed the pane in front of the user and always fell back to
+// recent. `here` now asks herdr for its focused pane's folder.
+func TestHereAutoHerdrClientUsesFocusedPane(t *testing.T) {
+	snapshot := func(e *hereEnv) string {
+		return `{"result":{"snapshot":{"focused_pane_id":"w1:p2","panes":[` +
+			`{"pane_id":"w1:p1","cwd":"` + e.bar + `","foreground_cwd":"` + e.bar + `"},` +
+			`{"pane_id":"w1:p2","cwd":"` + e.qux + `","foreground_cwd":"` + e.foo + `"}]}}}`
+	}
+	herdrClient := func(t *testing.T, e *hereEnv, argv ...string) {
+		t.Helper()
+		e.fakeHyprctl(t, `{"address":"0xa","class":"foot","pid":700}`, `[]`)
+		e.addProc(t, 700, 1, "foot", e.home, "")
+		e.addProc(t, 701, 700, "herdr", e.home, "/dev/pts/4")
+		cmdline := strings.Join(append([]string{"herdr"}, argv...), "\x00") + "\x00"
+		if err := os.WriteFile(filepath.Join(e.proc, "701", "cmdline"), []byte(cmdline), 0o644); err != nil { //nolint:gosec // test fixture
+			t.Fatal(err)
+		}
+	}
+
+	t.Run("default session", func(t *testing.T) {
+		e := newHereEnv(t)
+		herdrClient(t, e)
+		writeScript(t, filepath.Join(e.fakeBin, "herdr"), `[ "$*" = "api snapshot" ] && echo '`+snapshot(e)+`' || exit 1`)
+		h := hereOf(t, mustRun(t, e, "--here", "auto"))
+		if h["project_key"] != e.fooKey || h["source"] != "focused" {
+			t.Fatalf("here = %v; want the focused herdr pane's folder (foo)", h)
+		}
+	})
+	t.Run("named session", func(t *testing.T) {
+		e := newHereEnv(t)
+		herdrClient(t, e, "--session", "work")
+		writeScript(t, filepath.Join(e.fakeBin, "herdr"), `[ "$*" = "--session work api snapshot" ] && echo '`+snapshot(e)+`' || exit 1`)
+		h := hereOf(t, mustRun(t, e, "--here", "auto"))
+		if h["project_key"] != e.fooKey || h["source"] != "focused" {
+			t.Fatalf("here = %v; want foo from session work", h)
+		}
+	})
+	t.Run("remote client falls back to recent", func(t *testing.T) {
+		e := newHereEnv(t)
+		herdrClient(t, e, "--remote", "laptop")
+		writeScript(t, filepath.Join(e.fakeBin, "herdr"), `echo '`+snapshot(e)+`'`)
+		m := mustRun(t, e, "--here", "auto")
+		if h := hereOf(t, m); h["source"] != "recent" || h["project_key"] != recentKey(t, m) {
+			t.Fatalf("here = %v; a --remote client shows another machine's panes, want the recent fallback", h)
+		}
+	})
+}
