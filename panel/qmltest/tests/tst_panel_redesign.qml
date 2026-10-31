@@ -113,7 +113,7 @@ TestCase {
   function test_here_card_shows_project_chip_next_and_buttons() {
     open(payload())
     var tree = texts()
-    compare(tree[0], "Backstory")
+    compare(tree.slice(0, 2), [panel.view.scrollGlyph, "Backstory"])
     verify(hasText("foo"), "card title 'foo' missing: " + JSON.stringify(tree))
     verify(hasText("here"), "'here' chip missing")
     verify(hasText("Next: Wire the bar"))

@@ -17,6 +17,7 @@ Column {
   property real nowMs: Date.now()
 
   signal launchRequested(string agent)
+  signal hoveredAgent(string agent)
 
   width: parent ? parent.width : Style.space(360)
   spacing: 0
@@ -43,8 +44,7 @@ Column {
       Rectangle {
         anchors.fill: parent
         radius: Style.cornerRadius
-        color: sub.selected ? Util.alpha(Commons.Color.accent, 0.18)
-          : (subMouse.containsMouse ? Style.hoverFillFor(Commons.Color.foreground, Commons.Color.foreground) : "transparent")
+        color: sub.selected ? Util.alpha(Commons.Color.accent, 0.18) : "transparent"
         border.width: sub.selected ? 1 : 0
         border.color: Commons.Color.accent
       }
@@ -53,6 +53,7 @@ Column {
         id: subMouse
         anchors.fill: parent
         hoverEnabled: true
+        onEntered: root.hoveredAgent(sub.agentId)
         cursorShape: Qt.PointingHandCursor
         onClicked: root.launchRequested(sub.agentId)
       }

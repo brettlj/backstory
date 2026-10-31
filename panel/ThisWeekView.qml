@@ -89,7 +89,21 @@ Item {
   readonly property var selectedSummary: root.selectedEntry ? root.selectedEntry.summary : null
   readonly property string selectedAgent: root.selectedEntry ? root.selectedEntry.agent : ""
   readonly property string selectedId: root.selectedSummary ? rowId(root.selectedSummary) : ""
+  // Backstory's glyph (as the bar widget): md-script_text, an ancient scroll.
+  readonly property string scrollGlyph: String.fromCodePoint(0xF0BC2)
+  readonly property var weekTotals: Derive.weekTotals(root.weekDays)
+  // The hero's status line: what needs you, otherwise this week's count.
+  readonly property string heroStatus: root.attentionItems.length > 0
+    ? root.attentionItems.length + " need you"
+    : root.weekTotals.projects + " projects \u00b7 " + root.weekTotals.sessions + " sessions this week"
   readonly property string footerHint: "j/k move \u00b7 \u2192 agents \u00b7 \u2190 fold \u00b7 Enter continue \u00b7 t terminal \u00b7 m memory \u00b7 ? help \u00b7 r refresh \u00b7 Esc close"
+
+  // Hover moves the one selection the keyboard uses (no second highlight).
+  function selectRow(summary, agent) {
+    for (var i = 0; i < root.navRows.length; i++) {
+      if (root.navRows[i].agent === agent && rowId(root.navRows[i].summary) === rowId(summary)) { root.selectedIndex = i; return }
+    }
+  }
 
   function rowId(summary) {
     return Model.summaryProjectKey(summary) + "\n" + Model.summaryCwd(summary)
@@ -295,35 +309,73 @@ Item {
         width: parent.width
         spacing: Style.spacing.panelGap
 
-        Row {
+        Item {
           width: parent.width
+          height: Math.max(hero.implicitHeight, closeButton.implicitHeight)
 
-          Text {
-            textFormat: Text.PlainText
-            text: "Backstory"
-            font.family: Style.font.family
-            font.pixelSize: Style.font.heading
-            font.bold: true
-            color: Commons.Color.popups.text
-            width: parent.width - groupsButton.width - closeButton.width
+          Row {
+            id: hero
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: Style.space(14)
+
+            Text {
+              textFormat: Text.PlainText
+              text: root.scrollGlyph
+              font.family: Style.font.family
+              font.pixelSize: Style.font.display
+              color: Commons.Color.popups.text
+              anchors.verticalCenter: parent.verticalCenter
+            }
+
+            Column {
+              anchors.verticalCenter: parent.verticalCenter
+              spacing: Style.space(2)
+
+              Text {
+                textFormat: Text.PlainText
+                text: "Backstory"
+                font.family: Style.font.family
+                font.pixelSize: Style.font.title
+                font.bold: true
+                color: Commons.Color.popups.text
+              }
+              Text {
+                objectName: "heroStatus"
+                textFormat: Text.PlainText
+                text: root.heroStatus
+                visible: !root.waitingForFirstData
+                font.family: Style.font.family
+                font.pixelSize: Style.font.caption
+                font.bold: true
+                font.letterSpacing: 1.2
+                font.capitalization: Font.AllUppercase
+                color: root.attentionItems.length > 0 ? Commons.Color.urgent : Qt.darker(Commons.Color.popups.text, 1.4)
+              }
+            }
           }
 
-          PanelActionButton {
-            id: groupsButton
-            iconText: Glyphs.gear()
-            tooltipText: "Groups"
-            foreground: Commons.Color.popups.text
-            hoverColor: Commons.Color.accent
-            onClicked: root.groupEditorOpen = !root.groupEditorOpen
-          }
+          Row {
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
 
-          PanelActionButton {
-            id: closeButton
-            iconText: Glyphs.close()
-            tooltipText: "Close"
-            foreground: Commons.Color.popups.text
-            hoverColor: Commons.Color.urgent
-            onClicked: root.closeRequested()
+            PanelActionButton {
+              id: groupsButton
+              iconText: Glyphs.gear()
+              tooltipText: "Groups"
+              foreground: Commons.Color.popups.text
+              hoverColor: Commons.Color.accent
+              onClicked: root.groupEditorOpen = !root.groupEditorOpen
+            }
+
+            PanelActionButton {
+              id: closeButton
+              iconText: Glyphs.close()
+              tooltipText: "Close"
+              foreground: Commons.Color.popups.text
+              hoverColor: Commons.Color.urgent
+              onClicked: root.closeRequested()
+            }
           }
         }
 
@@ -346,6 +398,12 @@ Item {
         // Needs you: rendered only when non-empty (PANEL-CONTRACT.md
         // "Attention", decision 9be5c1d5 — an empty array is itself
         // the "nothing to flag" signal, not an absent section).
+        PanelSeparator {
+          width: parent.width
+          visible: root.attentionItems.length > 0
+          foreground: Commons.Color.popups.text
+        }
+
         Column {
           visible: root.attentionItems.length > 0
           width: parent.width
@@ -353,6 +411,11 @@ Item {
 
           PanelSectionHeader { text: "NEEDS YOU"; foreground: Commons.Color.popups.text }
           AttentionSection { items: root.attentionItems; width: parent.width; onDismissed: root.refresh() }
+        }
+
+        PanelSeparator {
+          width: parent.width
+          foreground: Commons.Color.popups.text
         }
 
         Column {
@@ -377,6 +440,7 @@ Item {
             onOpenTerminal: (cwd) => root.openTerminal(cwd)
             onContinueRequested: (summary) => root.continueOn(summary)
             onOpenMemory: (projectKey, displayName, cwd) => root.openMemory(projectKey, displayName, cwd)
+            onHoverRow: (summary, agent) => root.selectRow(summary, agent)
           }
         }
 

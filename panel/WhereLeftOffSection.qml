@@ -37,6 +37,7 @@ Column {
 
   signal toggleRow(var summary)
   signal launchRequested(var summary, string agent)
+  signal hoverRow(var summary, string agent)
 
   function rowKey(summary) {
     return Model.summaryProjectKey(summary) + "\n" + Model.summaryCwd(summary)
@@ -121,6 +122,7 @@ Column {
               onContinueRequested: root.continueRequested(childDelegate.modelData)
               onToggleExpanded: root.toggleRow(childDelegate.modelData)
               onOpenMemory: (projectKey, displayName, cwd) => root.openMemory(projectKey, displayName, cwd)
+              onHovered: root.hoverRow(childDelegate.modelData, "")
             }
 
             AgentSubRows {
@@ -130,6 +132,7 @@ Column {
               nowMs: root.nowMs
               selectedAgent: root.selectedId === childDelegate.key ? root.selectedAgent : ""
               onLaunchRequested: (agent) => root.launchRequested(childDelegate.modelData, agent)
+              onHoveredAgent: (agent) => root.hoverRow(childDelegate.modelData, agent)
             }
           }
         }
@@ -148,6 +151,7 @@ Column {
         onContinueRequested: root.continueRequested(summary)
         onToggleExpanded: root.toggleRow(summary)
         onOpenMemory: (projectKey, displayName, cwd) => root.openMemory(projectKey, displayName, cwd)
+        onHovered: if (!rowDelegate.isGroup) root.hoverRow(summary, "")
       }
 
       AgentSubRows {
@@ -157,6 +161,7 @@ Column {
         nowMs: root.nowMs
         selectedAgent: !rowDelegate.isGroup && root.selectedId === root.rowKey(summary) ? root.selectedAgent : ""
         onLaunchRequested: (agent) => root.launchRequested(summary, agent)
+        onHoveredAgent: (agent) => root.hoverRow(summary, agent)
       }
     }
   }

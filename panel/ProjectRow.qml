@@ -49,6 +49,7 @@ Item {
   // this project's cwd (AGENT-CONTRACT.md "same-agent resume is reopening
   // a terminal at the session's cwd"); the buttons are Continue and Memory.
   signal openTerminal(string cwd)
+  signal hovered()
   signal continueRequested()
   signal toggleExpanded()
   signal openMemory(string projectKey, string displayName, string cwd)
@@ -59,8 +60,7 @@ Item {
   Rectangle {
     anchors.fill: parent
     radius: Style.cornerRadius
-    color: root.selected ? Util.alpha(Commons.Color.accent, 0.18)
-      : (rowMouse.containsMouse ? Style.hoverFillFor(Commons.Color.foreground, Commons.Color.foreground) : "transparent")
+    color: root.selected ? Util.alpha(Commons.Color.accent, 0.18) : "transparent"
     border.width: root.selected ? 1 : 0
     border.color: Commons.Color.accent
   }
@@ -69,6 +69,7 @@ Item {
     id: rowMouse
     anchors.fill: parent
     hoverEnabled: true
+    onEntered: root.hovered()
     cursorShape: Qt.PointingHandCursor
     onClicked: root.openTerminal(Model.summaryCwd(root.summary))
   }

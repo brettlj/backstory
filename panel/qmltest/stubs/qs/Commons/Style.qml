@@ -25,6 +25,7 @@ QtObject {
 
   readonly property QtObject font: QtObject {
     readonly property string family: "sans-serif"
+    readonly property int display: style.testFontPx(24)
     readonly property int heading: style.testFontPx(18)
     readonly property int title: style.testFontPx(16)
     readonly property int body: style.testFontPx(14)
