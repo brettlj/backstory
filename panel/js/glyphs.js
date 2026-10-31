@@ -15,6 +15,7 @@ function addProject() { return "" }   // nf-fa-plus
 function week() { return "" }        // nf-fa-calendar
 function back() { return "" } // nf-fa-arrow_left
 function memory() { return "\uf02d" }       // nf-fa-book
+function help() { return "\uf059" }         // nf-fa-question_circle
 function edit() { return "\uf044" }         // nf-fa-pencil_square_o
 function trash() { return "\uf1f8" }        // nf-fa-trash
 function history() { return "\uf1da" }      // nf-fa-history

@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import "testutil.js" as TestUtil
 import "../../js/launchers.js" as Launchers
+import "../../js/glyphs.js" as Glyphs
 
 // The "?" help pane (task bcc469a2). The tool list below is a FIXTURE for
 // Launchers.toolsCommand(); the pane must render exactly what that response
@@ -119,6 +120,14 @@ TestCase {
     act.settled(function () { return panel.view.helpOpen }, "help never opened")
     press(Qt.Key_Question)
     act.settled(function () { return !panel.view.helpOpen && bodyVisible() }, "second ? never returned to the body")
+  }
+
+  function test_help_header_is_a_hero_row() {
+    press(Qt.Key_Question)
+    act.settled(function () { return texts().indexOf("Help") >= 0 }, "help header never rendered")
+    var t = texts()
+    var i = t.indexOf("Help")
+    compare(t.slice(i - 1, i + 2), [Glyphs.help(), "Help", "Keys, agent tools and groups"])
   }
 
   function test_help_renders_fixture_tools_and_sections() {

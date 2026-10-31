@@ -68,18 +68,11 @@ Item {
     width: parent.width
     spacing: Style.spacing.panelGap
 
-    Row {
-      width: parent.width
+    HeroHeader {
+      glyph: Glyphs.help()
+      title: "Help"
+      status: "Keys, agent tools and groups"
 
-      Text {
-        textFormat: Text.PlainText
-        text: "Help"
-        font.family: Style.font.family
-        font.pixelSize: Style.font.title
-        font.bold: true
-        color: Commons.Color.foreground
-        width: parent.width - Style.space(24)
-      }
       PanelActionButton {
         iconText: Glyphs.back()
         tooltipText: "Back"
