@@ -320,7 +320,7 @@ TestCase {
 
   function test_footer_lists_memorys_keys() {
     openMemory(readFixture(recordsGolden))
-    compare(footerText(), "u back · Esc close")
+    compare(footerText(), "j/k move · → expand · ← fold · u back · Esc close")
   }
 
   function test_u_goes_back_to_the_main_view() {
@@ -347,6 +347,33 @@ TestCase {
     openMemory(readFixture(recordsGolden))
     act.clickWhenReady(function () { return recordItem(id) }, { desc: "first record", until: function () { return recordItem(id).expanded } })
     compare(JSON.stringify(panel.view.memoryView.snapshot()), JSON.stringify({ history: false, expanded: [id] }))
+  }
+
+  // ---- Keys: the one highlight, as on the main view ----
+  function test_keys_move_the_highlight_and_expand_and_fold_it() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    openMemory(readFixture(recordsGolden))
+    panel.testKeyItem.forceActiveFocus()
+    verify(recordItem(ids[0]).current, "the first record is not highlighted on open")
+    act.pressKey(Qt.Key_J)
+    act.settled(function () { return recordItem(ids[1]).current && !recordItem(ids[0]).current }, "j never moved the highlight down")
+    act.pressKey(Qt.Key_Right)
+    act.settled(function () { return recordItem(ids[1]).expanded }, "right never expanded the highlighted record")
+    verify(!recordItem(ids[0]).expanded)
+    act.pressKey(Qt.Key_Left)
+    act.settled(function () { return !recordItem(ids[1]).expanded }, "left never folded it")
+    act.pressKey(Qt.Key_K)
+    act.settled(function () { return recordItem(ids[0]).current }, "k never moved the highlight up")
+    act.pressKey(Qt.Key_Return)
+    act.settled(function () { return recordItem(ids[0]).expanded }, "Enter never expanded the highlighted record")
+  }
+
+  function test_hover_moves_the_highlight() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    openMemory(readFixture(recordsGolden))
+    act.hover(recordItem(ids[2]), { x: 4, desc: "third record", until: function () { return recordItem(ids[2]).current } })
+    verify(!recordItem(ids[0]).current, "two records highlighted")
+    act.moveAway(panel.testContentItem)
   }
 
   function test_restore_opens_with_history_and_the_record_expanded() {

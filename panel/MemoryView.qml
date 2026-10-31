@@ -39,6 +39,8 @@ Item {
   property var pendingExpanded: ({})
   property string errorText: ""
   property bool busy: false
+  // The one highlighted record, which the keys act on and hover moves.
+  property int cursorIndex: 0
 
   // id of the record whose inline "Forget this record?" confirm is open.
   property string confirmingId: ""
@@ -63,12 +65,40 @@ Item {
     if (root.visible) {
       root.expandedIds = root.pendingExpanded
       root.pendingExpanded = {}
+      root.cursorIndex = 0
       root.errorText = ""
       root.confirmingId = ""
       root.pendingPurge = null
       root.purgeNote = ""
       root.refresh()
     }
+  }
+
+  function setExpanded(recordId, expanded) {
+    if (!!root.expandedIds[recordId] !== expanded) root.toggleExpanded(recordId)
+  }
+
+  // j/k and the arrows move the highlight, as on the main view: up from the
+  // first record shows the header again. Right expands the highlighted
+  // record, Left folds it, Enter toggles it. Returns whether it used the key.
+  function handleKey(key) {
+    var rec = recordRepeater.itemAt(root.cursorIndex)
+    switch (key) {
+    case Qt.Key_J: case Qt.Key_Down: root.moveCursor(1); return true
+    case Qt.Key_K: case Qt.Key_Up: root.moveCursor(-1); return true
+    case Qt.Key_Right: if (rec) root.setExpanded(rec.rid, true); return true
+    case Qt.Key_Left: if (rec) root.setExpanded(rec.rid, false); return true
+    case Qt.Key_Return: case Qt.Key_Enter: if (rec) root.toggleExpanded(rec.rid); return true
+    }
+    return false
+  }
+
+  function moveCursor(delta) {
+    if (root.records.length === 0) return
+    if (delta < 0 && root.cursorIndex === 0) { root.reveal(header); return }
+    root.cursorIndex = Math.max(0, Math.min(root.records.length - 1, root.cursorIndex + delta))
+    var rec = recordRepeater.itemAt(root.cursorIndex)
+    if (rec) root.reveal(rec)
   }
 
   function toggleExpanded(recordId) {
@@ -249,6 +279,7 @@ Item {
     spacing: Style.spacing.rowGap
 
     HeroHeader {
+      id: header
       glyph: Glyphs.memory()
       title: "Memory"
       status: root.displayName + " · " + root.records.length + (root.records.length === 1 ? " saved record" : " saved records")
@@ -303,19 +334,32 @@ Item {
       delegate: Item {
         id: rec
         required property var modelData
+        required property int index
         readonly property string rid: Records.recordId(modelData)
         readonly property string mark: Memory.statusMark(Records.recordStatus(modelData))
         readonly property bool deleted: Records.recordStatus(modelData) === "deleted"
         readonly property string body: Records.recordText(modelData)
         readonly property Item confirmFlow: recordConfirm
         readonly property bool expanded: !!root.expandedIds[rec.rid]
+        readonly property bool current: rec.index === root.cursorIndex
 
         width: content.width
         height: recColumn.implicitHeight + Style.spacing.rowGap
 
+        // Drawn like the main view's selected row (ProjectRow.qml).
+        Rectangle {
+          anchors.fill: parent
+          radius: Style.cornerRadius
+          color: rec.current ? Util.alpha(Commons.Color.accent, 0.18) : "transparent"
+          border.width: rec.current ? 1 : 0
+          border.color: Commons.Color.accent
+        }
+
         MouseArea {
           anchors.fill: parent
+          hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
+          onEntered: root.cursorIndex = rec.index
           onClicked: root.toggleExpanded(rec.rid)
         }
 

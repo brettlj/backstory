@@ -114,7 +114,8 @@ Item {
   readonly property string closeHint: (root.canPopOut ? "p pop out \u00b7 " : "") + "Esc close"
   readonly property string mainFooterHint: "j/k move \u00b7 \u2192 agents \u00b7 \u2190 fold \u00b7 Enter continue \u00b7 t terminal \u00b7 m memory \u00b7 ? help \u00b7 r refresh \u00b7 " + root.closeHint
   readonly property string footerHint: root.helpOpen ? "u or ? back \u00b7 " + root.closeHint
-    : (root.groupEditorOpen || root.memoryOpen) ? "u back \u00b7 " + root.closeHint : root.mainFooterHint
+    : root.memoryOpen ? "j/k move \u00b7 \u2192 expand \u00b7 \u2190 fold \u00b7 u back \u00b7 " + root.closeHint
+    : root.groupEditorOpen ? "u back \u00b7 " + root.closeHint : root.mainFooterHint
 
   // Hover moves the one selection the keyboard uses (no second highlight).
   function selectRow(summary, agent) {
@@ -269,13 +270,15 @@ Item {
 
   // The content's key handler; returns whether it consumed the key. Esc
   // asks the host to close; p asks it to pop out, where it can; u goes back from Groups, Memory or Help to the
-  // main body; the row keys act only on the main body. A text field in
-  // Groups or Memory takes its keys first, so typing a u there stays text.
+  // main body; Memory takes its own keys; the row keys act only on the main
+  // body. A text field in Groups takes its keys first, so typing there
+  // stays text.
   function handleKey(key, modifiers) {
     if (key === Qt.Key_Escape) { root.closeRequested(); return true }
     if (key === Qt.Key_P && root.canPopOut) { root.popOutRequested(); return true }
     if (key === Qt.Key_U && (root.groupEditorOpen || root.memoryOpen || root.helpOpen)) { root.showMain(); return true }
-    if (root.groupEditorOpen || root.memoryOpen) return false
+    if (root.memoryOpen) return memoryPane.handleKey(key)
+    if (root.groupEditorOpen) return false
     if (root.helpOpen) {
       if (key === Qt.Key_Question) { root.helpOpen = false; return true }
       return false
