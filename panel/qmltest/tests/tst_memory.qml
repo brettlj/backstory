@@ -448,6 +448,21 @@ TestCase {
     compare(t.slice(i - 1, i + 2), [Glyphs.back(), "acme", "Memory · " + golden.records.length + " saved records"])
   }
 
+  // A long project name is cut with an ellipsis before the header's buttons
+  // (found by review: it ran under them).
+  function test_a_long_project_name_stops_before_the_header_buttons() {
+    openMemory(readFixture(recordsGolden))
+    panel.view.openMemory(projectKey, "a-project-name-long-enough-to-run-under-the-header-buttons-and-past-them", cwd)
+    var title = TestUtil.findFirst(panel.testContentItem, function (n) { return n.objectName === "heroTitle" && n.text.indexOf("a-project-name") === 0 })
+    // The pin is the header's leftmost button in the window.
+    var pin = TestUtil.findFirst(panel.testContentItem, function (n) { return n.objectName === "pinButton" && n.mapToItem(panel.testContentItem, 0, 0).y < title.mapToItem(panel.testContentItem, 0, 0).y + 40 })
+    verify(pin !== null, "no pin button in Memory's header")
+    act.settled(function () { return title.truncated }, "the long title was never cut")
+    var titleRight = title.mapToItem(panel.testContentItem, title.width, 0).x
+    var buttonsLeft = pin.mapToItem(panel.testContentItem, 0, 0).x
+    verify(titleRight <= buttonsLeft, "the title ends at " + titleRight + ", past the buttons at " + buttonsLeft)
+  }
+
   function test_header_says_one_saved_record() {
     var golden = JSON.parse(readFixture(recordsGolden))
     golden.records = golden.records.slice(0, 1)

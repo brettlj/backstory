@@ -52,10 +52,16 @@ Item {
     }
 
     Column {
+      id: labels
       anchors.verticalCenter: parent.verticalCenter
       spacing: Style.space(2)
+      // Up to the buttons: a long title or status is cut with an ellipsis.
+      readonly property real room: Math.max(0, root.width - trailing.width - labels.x - Style.space(8))
 
       Text {
+        objectName: "heroTitle"
+        width: Math.min(implicitWidth, labels.room)
+        elide: Text.ElideRight
         textFormat: Text.PlainText
         text: root.title
         font.family: Style.font.family
@@ -65,6 +71,8 @@ Item {
       }
       Text {
         objectName: "heroStatus"
+        width: Math.min(implicitWidth, labels.room)
+        elide: Text.ElideRight
         textFormat: Text.PlainText
         text: root.status
         visible: root.statusShown && root.status !== ""
