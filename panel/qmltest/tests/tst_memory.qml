@@ -94,6 +94,7 @@ TestCase {
     tryCompare(panel.view, "loading", false, 2000)
     clickByTooltip("Memory", { until: function () { return panel.view.memoryOpen } })
     act.launchedNext(isRecordsRun(false), "memory records run")
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") }, "the slide into Memory never finished")
     act.quiescent(function () { return [texts(), panel.testImplicitHeight] }, "memory view never finished rendering")
   }
 

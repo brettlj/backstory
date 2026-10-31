@@ -23,6 +23,9 @@ QtObject {
 
   readonly property int cornerRadius: 8
 
+  // The real one returns 0 when Hyprland's animations are off.
+  function duration(ms) { return ms }
+
   readonly property QtObject font: QtObject {
     readonly property string family: "sans-serif"
     readonly property int display: style.testFontPx(24)

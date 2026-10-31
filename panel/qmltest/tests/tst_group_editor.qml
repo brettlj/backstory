@@ -80,6 +80,7 @@ TestCase {
   function openGroupEditor() {
     clickByTooltip("Groups")
     act.settled(function () { return panel.view.groupEditorOpen }, "group editor never opened")
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "groupsPage") }, "the slide into Groups never finished")
     // The editor fetches its group list on open; its rows exist once that lands.
     act.launchedNext(function (r) { return ProcessController.keyFor(r.command) === ProcessController.keyFor(Launchers.groupListCommand()) }, "group list fetch")
   }

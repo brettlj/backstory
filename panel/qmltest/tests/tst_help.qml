@@ -148,6 +148,30 @@ TestCase {
     act.settledEq(area, "contentY", 0)
   }
 
+  function page(name) {
+    return TestUtil.findFirst(panel.testContentItem, function (n) { return n.objectName === name })
+  }
+
+  // Opening Help slides the main body out to the left; going back slides
+  // Help out to the right. Each records every place it passes through.
+  function test_help_slides_the_main_body_out_left_and_goes_back_out_right() {
+    var main = page("mainPage")
+    var mainSeen = []
+    main.offsetChanged.connect(function () { mainSeen.push(main.offset) })
+    press(Qt.Key_Question)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "helpPage") }, "the slide into Help never finished")
+    verify(mainSeen.some(function (v) { return v > -1 && v < 0 }), "the main body never slid left: " + mainSeen)
+    compare(main.offset, -1)
+
+    var help = page("helpPage")
+    var helpSeen = []
+    help.offsetChanged.connect(function () { helpSeen.push(help.offset) })
+    press(Qt.Key_U)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "mainPage") }, "the slide back never finished")
+    verify(helpSeen.some(function (v) { return v > 0 && v < 1 }), "Help never slid right: " + helpSeen)
+    compare(help.offset, 1)
+  }
+
   function test_u_goes_back_to_the_main_view() {
     press(Qt.Key_Question)
     act.settledEq(panel.view, "helpOpen", true)
@@ -159,6 +183,7 @@ TestCase {
   function test_a_rule_before_each_section() {
     press(Qt.Key_Question)
     act.settled(function () { return texts().indexOf("GROUPS") >= 0 }, "help never rendered")
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "helpPage") }, "the slide into Help never finished")
     compare(visibleRules().length, 4)
   }
 

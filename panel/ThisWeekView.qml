@@ -414,160 +414,185 @@ Item {
     // one more child of `card`, so it is always within the window's
     // implicit bounds; the gear/back control swaps which one is
     // visible instead of opening a second surface.
-    Column {
+    // The pages lie on top of each other; the tallest one showing (both,
+    // while they slide) sets the height.
+    Item {
       id: contentColumn
       width: parent.width
+      implicitHeight: {
+        var h = 0
+        for (var i = 0; i < children.length; i++)
+          if (children[i].visible) h = Math.max(h, children[i].implicitHeight)
+        return h
+      }
 
-      Column {
-        id: body
-        visible: !root.groupEditorOpen && !root.memoryOpen && !root.helpOpen
-        width: parent.width
-        spacing: Style.spacing.panelGap
-
-        HeroHeader {
-          glyph: root.scrollGlyph
-          title: "Backstory"
-          status: root.heroStatus
-          statusShown: !root.waitingForFirstData
-          statusUrgent: root.attentionItems.length > 0
-
-          PanelActionButton {
-            visible: root.canPopOut
-            iconText: Glyphs.popOut()
-            tooltipText: "Pop out"
-            foreground: Commons.Color.popups.text
-            hoverColor: Commons.Color.accent
-            onClicked: root.popOutRequested()
-          }
-
-          PanelActionButton {
-            id: groupsButton
-            iconText: Glyphs.gear()
-            tooltipText: "Groups"
-            foreground: Commons.Color.popups.text
-            hoverColor: Commons.Color.accent
-            onClicked: root.groupEditorOpen = !root.groupEditorOpen
-          }
-
-          PanelActionButton {
-            id: closeButton
-            iconText: Glyphs.close()
-            tooltipText: "Close"
-            foreground: Commons.Color.popups.text
-            hoverColor: Commons.Color.urgent
-            onClicked: root.closeRequested()
-          }
-        }
-
-        HereCard {
-          visible: root.hereProject !== null
-          width: parent.width
-          summary: root.hereProject
-          hereName: root.hereName
-          defaultAgent: continueAction.defaultAgent
-          continueLabel: continueAction.labelFor(root.hereProject)
-          expanded: root.hereProject !== null && !!root.expandedRows[root.rowId(root.hereProject)]
-          onToggleExpanded: if (root.hereProject) root.toggleRow(root.hereProject)
-          week: root.weekDays
-          nowMs: root.nowMs
-          onContinueRequested: root.continueOn(root.hereProject)
-          onTerminalRequested: root.openTerminal(Model.summaryCwd(root.hereProject))
-          onMemoryRequested: root.summaryMemory(root.hereProject)
-        }
-
-        // Needs you: rendered only when non-empty (PANEL-CONTRACT.md
-        // "Attention", decision 9be5c1d5 — an empty array is itself
-        // the "nothing to flag" signal, not an absent section).
-        PanelSeparator {
-          width: parent.width
-          visible: root.attentionItems.length > 0
-          foreground: Commons.Color.popups.text
-        }
+      SlidePage {
+        objectName: "mainPage"
+        current: !root.groupEditorOpen && !root.memoryOpen && !root.helpOpen
+        side: -1
 
         Column {
-          visible: root.attentionItems.length > 0
+          id: body
           width: parent.width
-          spacing: Style.spacing.labelGap
+          spacing: Style.spacing.panelGap
 
-          PanelSectionHeader { text: "NEEDS YOU"; foreground: Commons.Color.popups.text }
-          AttentionSection { items: root.attentionItems; width: parent.width; onDismissed: root.refresh() }
-        }
+          HeroHeader {
+            glyph: root.scrollGlyph
+            title: "Backstory"
+            status: root.heroStatus
+            statusShown: !root.waitingForFirstData
+            statusUrgent: root.attentionItems.length > 0
 
-        PanelSeparator {
-          width: parent.width
-          foreground: Commons.Color.popups.text
-        }
+            PanelActionButton {
+              visible: root.canPopOut
+              iconText: Glyphs.popOut()
+              tooltipText: "Pop out"
+              foreground: Commons.Color.popups.text
+              hoverColor: Commons.Color.accent
+              onClicked: root.popOutRequested()
+            }
 
-        Column {
-          width: parent.width
-          spacing: Style.spacing.labelGap
+            PanelActionButton {
+              id: groupsButton
+              iconText: Glyphs.gear()
+              tooltipText: "Groups"
+              foreground: Commons.Color.popups.text
+              hoverColor: Commons.Color.accent
+              onClicked: root.groupEditorOpen = !root.groupEditorOpen
+            }
 
-          PanelSectionHeader { text: "RECENT"; foreground: Commons.Color.popups.text }
-          WhereLeftOffSection {
-            id: recentSection
-            rows: root.whereLeftOffRows
-            waiting: root.waitingForFirstData
-            week: root.weekDays
-            expandedGroups: root.expandedGroups
-            selectedId: root.selectedId
-            selectedAgent: root.selectedAgent
-            expandedRows: root.expandedRows
-            nowMs: root.nowMs
-            onToggleRow: (summary) => root.toggleRow(summary)
-            onLaunchRequested: (summary, agent) => root.continueOn(summary, agent)
+            PanelActionButton {
+              id: closeButton
+              iconText: Glyphs.close()
+              tooltipText: "Close"
+              foreground: Commons.Color.popups.text
+              hoverColor: Commons.Color.urgent
+              onClicked: root.closeRequested()
+            }
+          }
+
+          HereCard {
+            visible: root.hereProject !== null
             width: parent.width
-            onToggleGroup: (group) => root.toggleGroup(group)
-            onOpenTerminal: (cwd) => root.openTerminal(cwd)
-            onContinueRequested: (summary) => root.continueOn(summary)
-            onOpenMemory: (projectKey, displayName, cwd) => root.openMemory(projectKey, displayName, cwd)
-            onHoverRow: (summary, agent) => root.selectRow(summary, agent)
+            summary: root.hereProject
+            hereName: root.hereName
+            defaultAgent: continueAction.defaultAgent
+            continueLabel: continueAction.labelFor(root.hereProject)
+            expanded: root.hereProject !== null && !!root.expandedRows[root.rowId(root.hereProject)]
+            onToggleExpanded: if (root.hereProject) root.toggleRow(root.hereProject)
+            week: root.weekDays
+            nowMs: root.nowMs
+            onContinueRequested: root.continueOn(root.hereProject)
+            onTerminalRequested: root.openTerminal(Model.summaryCwd(root.hereProject))
+            onMemoryRequested: root.summaryMemory(root.hereProject)
           }
-        }
 
-        Text {
+          // Needs you: rendered only when non-empty (PANEL-CONTRACT.md
+          // "Attention", decision 9be5c1d5 — an empty array is itself
+          // the "nothing to flag" signal, not an absent section).
+          PanelSeparator {
+            width: parent.width
+            visible: root.attentionItems.length > 0
+            foreground: Commons.Color.popups.text
+          }
+
+          Column {
+            visible: root.attentionItems.length > 0
+            width: parent.width
+            spacing: Style.spacing.labelGap
+
+            PanelSectionHeader { text: "NEEDS YOU"; foreground: Commons.Color.popups.text }
+            AttentionSection { items: root.attentionItems; width: parent.width; onDismissed: root.refresh() }
+          }
+
+          PanelSeparator {
+            width: parent.width
+            foreground: Commons.Color.popups.text
+          }
+
+          Column {
+            width: parent.width
+            spacing: Style.spacing.labelGap
+
+            PanelSectionHeader { text: "RECENT"; foreground: Commons.Color.popups.text }
+            WhereLeftOffSection {
+              id: recentSection
+              rows: root.whereLeftOffRows
+              waiting: root.waitingForFirstData
+              week: root.weekDays
+              expandedGroups: root.expandedGroups
+              selectedId: root.selectedId
+              selectedAgent: root.selectedAgent
+              expandedRows: root.expandedRows
+              nowMs: root.nowMs
+              onToggleRow: (summary) => root.toggleRow(summary)
+              onLaunchRequested: (summary, agent) => root.continueOn(summary, agent)
+              width: parent.width
+              onToggleGroup: (group) => root.toggleGroup(group)
+              onOpenTerminal: (cwd) => root.openTerminal(cwd)
+              onContinueRequested: (summary) => root.continueOn(summary)
+              onOpenMemory: (projectKey, displayName, cwd) => root.openMemory(projectKey, displayName, cwd)
+              onHoverRow: (summary, agent) => root.selectRow(summary, agent)
+            }
+          }
+
+          Text {
+            width: parent.width
+            textFormat: Text.PlainText
+            text: root.summaryText
+            visible: !root.waitingForFirstData
+            font.family: Style.font.family
+            font.pixelSize: Style.font.caption
+            color: Qt.darker(Commons.Color.popups.text, 1.3)
+            wrapMode: Text.WordWrap
+          }
+
+        }
+      }
+
+      SlidePage {
+        objectName: "groupsPage"
+        current: root.groupEditorOpen
+
+        GroupEditor {
+          id: groupEditor
           width: parent.width
-          textFormat: Text.PlainText
-          text: root.summaryText
-          visible: !root.waitingForFirstData
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
-          color: Qt.darker(Commons.Color.popups.text, 1.3)
-          wrapMode: Text.WordWrap
+          canPopOut: root.canPopOut
+          onPopOutRequested: root.popOutRequested()
+          onReveal: (target) => root.revealInScroller(target)
+          onCloseRequested: root.groupEditorOpen = false
+          onChanged: root.refresh()
         }
-
       }
 
-      GroupEditor {
-        id: groupEditor
-        visible: root.groupEditorOpen
-        width: parent.width
-        canPopOut: root.canPopOut
-        onPopOutRequested: root.popOutRequested()
-        onReveal: (target) => root.revealInScroller(target)
-        onCloseRequested: root.groupEditorOpen = false
-        onChanged: root.refresh()
+      SlidePage {
+        objectName: "helpPage"
+        current: root.helpOpen
+
+        HelpView {
+          width: parent.width
+          canPopOut: root.canPopOut
+          onPopOutRequested: root.popOutRequested()
+          onCloseRequested: root.helpOpen = false
+        }
       }
 
-      HelpView {
-        visible: root.helpOpen
-        width: parent.width
-        canPopOut: root.canPopOut
-        onPopOutRequested: root.popOutRequested()
-        onCloseRequested: root.helpOpen = false
-      }
+      SlidePage {
+        objectName: "memoryPage"
+        current: root.memoryOpen
 
-      MemoryView {
-        id: memoryPane
-        visible: root.memoryOpen
-        width: parent.width
-        projectKey: root.memoryProjectKey
-        displayName: root.memoryDisplayName
-        location: root.memoryLocation
-        canPopOut: root.canPopOut
-        onPopOutRequested: root.popOutRequested()
-        onReveal: (target) => root.revealInScroller(target)
-        onCloseRequested: root.memoryOpen = false
-        onChanged: root.refresh()
+        MemoryView {
+          id: memoryPane
+          width: parent.width
+          projectKey: root.memoryProjectKey
+          displayName: root.memoryDisplayName
+          location: root.memoryLocation
+          canPopOut: root.canPopOut
+          onPopOutRequested: root.popOutRequested()
+          onReveal: (target) => root.revealInScroller(target)
+          onCloseRequested: root.memoryOpen = false
+          onChanged: root.refresh()
+        }
       }
     }
   }
