@@ -184,10 +184,12 @@ Item {
   }
 
   // The content's key handler; returns whether it consumed the key. Esc
-  // asks the host to close; the row keys act only on the main body, never
-  // while the group editor or Memory view is showing.
+  // asks the host to close; u goes back from Groups, Memory or Help to the
+  // main body; the row keys act only on the main body. A text field in
+  // Groups or Memory takes its keys first, so typing a u there stays text.
   function handleKey(key, modifiers) {
     if (key === Qt.Key_Escape) { root.closeRequested(); return true }
+    if (key === Qt.Key_U && (root.groupEditorOpen || root.memoryOpen || root.helpOpen)) { root.showMain(); return true }
     if (root.groupEditorOpen || root.memoryOpen) return false
     if (root.helpOpen) {
       if (key === Qt.Key_Question) { root.helpOpen = false; return true }
@@ -227,10 +229,15 @@ Item {
     if (root.active) {
       root.refresh()
     } else {
-      root.groupEditorOpen = false
-      root.memoryOpen = false
-      root.helpOpen = false
+      root.showMain()
     }
+  }
+
+  // Back from Groups, Memory or Help to the main view.
+  function showMain() {
+    root.groupEditorOpen = false
+    root.memoryOpen = false
+    root.helpOpen = false
   }
 
   function openMemory(projectKey, displayName, cwd) {

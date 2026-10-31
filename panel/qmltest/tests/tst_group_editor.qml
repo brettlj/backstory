@@ -161,6 +161,13 @@ TestCase {
     act.moveAway(panel.testContentItem)
   }
 
+  function test_u_goes_back_to_the_main_view() {
+    openGroupEditor()
+    panel.testKeyItem.forceActiveFocus()
+    act.pressKey(Qt.Key_U)
+    act.settledEq(panel.view, "groupEditorOpen", false)
+  }
+
   function test_header_counts_groups_and_projects() {
     openGroupEditor()
     expectHeroStatus("0 groups · 1 project this week")

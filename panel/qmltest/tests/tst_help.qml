@@ -126,6 +126,14 @@ TestCase {
     return TestUtil.findAll(panel.testContentItem, function (n) { return n.visible && n.strength !== undefined })
   }
 
+  function test_u_goes_back_to_the_main_view() {
+    press(Qt.Key_Question)
+    act.settledEq(panel.view, "helpOpen", true)
+    press(Qt.Key_U)
+    act.settledEq(panel.view, "helpOpen", false)
+    act.settled(function () { return texts().indexOf("Backstory") >= 0 }, "main view never came back")
+  }
+
   function test_a_rule_before_each_section() {
     press(Qt.Key_Question)
     act.settled(function () { return texts().indexOf("GROUPS") >= 0 }, "help never rendered")

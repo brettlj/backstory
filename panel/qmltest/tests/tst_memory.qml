@@ -313,6 +313,13 @@ TestCase {
     return TestUtil.findAll(panel.testContentItem, function (n) { return n.visible && n.strength !== undefined })
   }
 
+  function test_u_goes_back_to_the_main_view() {
+    openMemory(readFixture(recordsGolden))
+    panel.testKeyItem.forceActiveFocus()
+    act.pressKey(Qt.Key_U)
+    act.settledEq(panel.view, "memoryOpen", false)
+  }
+
   function test_rules_under_the_header_and_above_forget() {
     openMemory(readFixture(recordsGolden))
     var rules = visibleRules()

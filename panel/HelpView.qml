@@ -123,7 +123,8 @@ Item {
       text: "The top card is the project you are in. Each row's chips are the agents used there, "
         + "newest first. Continue resumes the newest one; \u2192 (or a click on the chips) expands one "
         + "sub-row per agent, \u2190 folds them, and Enter on a sub-row opens that agent in the folder. "
-        + "Enter on a row continues it, t opens a terminal there, r refreshes."
+        + "Enter on a row continues it, t opens a terminal there, r refreshes. In Groups, Memory "
+        + "and Help, u goes back to the main view."
     }
 
     PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
