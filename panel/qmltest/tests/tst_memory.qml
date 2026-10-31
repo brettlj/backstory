@@ -309,6 +309,22 @@ TestCase {
     expectNoOutOfBounds("delete confirm open")
   }
 
+  // ---- The header: a hero row naming the project and its record count ----
+  function test_header_names_the_project_and_counts_saved_records() {
+    var golden = JSON.parse(readFixture(recordsGolden))
+    verify(golden.records.length > 1, "fixture needs several records")
+    openMemory(JSON.stringify(golden))
+    expectText("Memory")
+    expectText("acme · " + golden.records.length + " saved records")
+  }
+
+  function test_header_says_one_saved_record() {
+    var golden = JSON.parse(readFixture(recordsGolden))
+    golden.records = golden.records.slice(0, 1)
+    openMemory(JSON.stringify(golden))
+    expectText("acme · 1 saved record")
+  }
+
   // ---- Memory and Forget act on exactly the row (task a9a784ec) ----
 
   readonly property string wsKey: "workspace:/home/x/projects"

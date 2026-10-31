@@ -220,28 +220,10 @@ Item {
     width: parent.width
     spacing: Style.spacing.rowGap
 
-    Row {
-      width: parent.width
-
-      PanelActionButton {
-        iconText: Glyphs.back()
-        tooltipText: "Back"
-        foreground: Commons.Color.popups.text
-        hoverColor: Commons.Color.accent
-        onClicked: root.closeRequested()
-      }
-
-      Text {
-        textFormat: Text.PlainText
-        text: "Memory · " + root.displayName
-        font.family: Style.font.family
-        font.pixelSize: Style.font.heading
-        font.bold: true
-        color: Commons.Color.popups.text
-        elide: Text.ElideRight
-        width: parent.width - Style.space(56)
-        anchors.verticalCenter: parent.verticalCenter
-      }
+    HeroHeader {
+      glyph: Glyphs.memory()
+      title: "Memory"
+      status: root.displayName + " · " + root.records.length + (root.records.length === 1 ? " saved record" : " saved records")
 
       PanelActionButton {
         iconText: Glyphs.history()
@@ -249,6 +231,14 @@ Item {
         foreground: root.showHistory ? Commons.Color.accent : Commons.Color.popups.text
         hoverColor: Commons.Color.accent
         onClicked: root.toggleHistory()
+      }
+
+      PanelActionButton {
+        iconText: Glyphs.back()
+        tooltipText: "Back"
+        foreground: Commons.Color.popups.text
+        hoverColor: Commons.Color.accent
+        onClicked: root.closeRequested()
       }
     }
 
