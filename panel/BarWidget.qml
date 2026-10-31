@@ -86,7 +86,9 @@ Ui.Panel {
     return {
       x: monX + popup.cardOrigin.x, y: monY + popup.cardOrigin.y,
       w: popup.contentWidth, h: popup.drawnHeight,
-      bar: popup.barThickness, gap: popup.gap, monX: monX, monY: monY
+      bar: popup.barThickness, gap: popup.gap, monX: monX, monY: monY,
+      monW: scr ? scr.width : 0, monH: scr ? scr.height : 0,
+      edge: root.bar && root.bar.position ? root.bar.position : "top"
     }
   }
 

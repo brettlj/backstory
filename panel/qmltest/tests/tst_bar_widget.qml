@@ -119,7 +119,7 @@ TestCase {
   // panel-switching hook Tab calls (it records each direction).
   function fakeBar(size) {
     return Qt.createQmlObject('import QtQuick; QtObject { property int barSize: ' + size
-      + '; property string fontFamily: "sans-serif"; property var switched: []; '
+      + '; property string fontFamily: "sans-serif"; property string position: "top"; property var switched: []; '
       + 'function switchPanelFrom(panel, direction) { switched = switched.concat([direction]); return true } }', testCase)
   }
 
@@ -185,6 +185,9 @@ TestCase {
     verify(view !== null && view.canPopOut === true, "the popup's view offers no pop-out")
     verify(TestUtil.findFirst(content, function (n) { return n.tooltipText === "Pop out" }) !== null, "no pop-out button in the popup")
     compare(TestUtil.findFirst(content, function (n) { return n.objectName === "pinButton" }), null, "the popup offers a pin")
+    widget.bar = fakeBar(26)
+    widget.bar.position = "left"
+    widget.testPopup.screen = { x: 0, y: 0, width: 4096, height: 2160 }
     widget.testPopup.cardOrigin = Qt.point(3700, 34)
     widget.testPopup.barThickness = 26
     widget.testPopup.gap = 8
@@ -195,7 +198,7 @@ TestCase {
     // The window opens where you were in the popup, and where its card is.
     var payload = JSON.parse(run.command[4])
     compare(payload.view, "help")
-    compare(JSON.stringify(payload.from), JSON.stringify({ x: 3700, y: 34, w: widget.testPopup.contentWidth, h: widget.testPopup.drawnHeight, bar: 26, gap: 8, monX: 0, monY: 0 }))
+    compare(JSON.stringify(payload.from), JSON.stringify({ x: 3700, y: 34, w: widget.testPopup.contentWidth, h: widget.testPopup.drawnHeight, bar: 26, gap: 8, monX: 0, monY: 0, monW: 4096, monH: 2160, edge: "left" }))
   }
 
   // The popup stays up until the window, in its place, closes it, so

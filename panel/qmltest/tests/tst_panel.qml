@@ -217,7 +217,7 @@ TestCase {
   }
 
   // ---- The pop-out from the bar popup ----
-  readonly property var popFrom: ({ x: 3700, y: 34, w: 380, h: 560, bar: 26, gap: 8, monX: 0, monY: 0 })
+  readonly property var popFrom: ({ x: 3700, y: 34, w: 380, h: 560, bar: 26, gap: 8, monX: 0, monY: 0, monW: 4096, monH: 2160, edge: "top" })
 
   function popOutPayload(from) {
     return JSON.stringify({ view: "main", from: from })
@@ -227,10 +227,37 @@ TestCase {
     compare(JSON.stringify(Popout.restRect(Popout.fromRect(popFrom), 18)), JSON.stringify({ x: 3674, y: 52, w: 380, h: 578 }))
   }
 
+  // Away from the bar, whichever edge it is on, and a bar height along it
+  // toward the middle of the monitor.
+  function rest(change) {
+    return JSON.stringify(Popout.restRect(Popout.fromRect(Object.assign({}, popFrom, change)), 18))
+  }
+
+  function test_rest_under_a_top_bar_steps_toward_the_middle_from_a_left_icon() {
+    compare(rest({ x: 40 }), JSON.stringify({ x: 66, y: 52, w: 380, h: 578 }))
+  }
+
+  function test_rest_over_a_bottom_bar_rises_and_grows_upward() {
+    compare(rest({ y: 1566, edge: "bottom" }), JSON.stringify({ x: 3674, y: 1530, w: 380, h: 578 }))
+  }
+
+  function test_rest_beside_a_left_bar_steps_right_and_toward_the_middle() {
+    compare(rest({ x: 36, y: 400, bar: 28, edge: "left" }), JSON.stringify({ x: 56, y: 428, w: 380, h: 578 }))
+  }
+
+  function test_rest_beside_a_right_bar_steps_left_and_toward_the_middle() {
+    compare(rest({ x: 3680, y: 1500, bar: 28, edge: "right" }), JSON.stringify({ x: 3660, y: 1472, w: 380, h: 578 }))
+  }
+
+  function test_rest_on_a_monitor_off_the_origin_measures_the_middle_on_it() {
+    compare(rest({ x: 4136, monX: 4096 }), JSON.stringify({ x: 4162, y: 52, w: 380, h: 578 }))
+  }
+
   function test_a_from_that_is_not_plain_numbers_in_range_is_refused() {
     verify(Popout.fromRect(popFrom) !== null)
     var bad = [null, "x", {}, Object.assign({}, popFrom, { x: "3700" }), Object.assign({}, popFrom, { w: 0 }),
-               Object.assign({}, popFrom, { h: NaN }), Object.assign({}, popFrom, { y: 1e9 }), Object.assign({}, popFrom, { bar: -1 })]
+               Object.assign({}, popFrom, { h: NaN }), Object.assign({}, popFrom, { y: 1e9 }), Object.assign({}, popFrom, { bar: -1 }),
+               Object.assign({}, popFrom, { edge: "middle" }), Object.assign({}, popFrom, { monW: 0 })]
     for (var i = 0; i < bad.length; i++) compare(Popout.fromRect(bad[i]), null, "accepted " + JSON.stringify(bad[i]))
   }
 
