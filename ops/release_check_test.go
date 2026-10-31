@@ -13,7 +13,8 @@ import (
 	"testing"
 )
 
-const realSHA = "1e5516887975bbc2a7a3bb403adb0d53cbcb5795a95a469380ffc9389a844ecf"
+// realSHA is the measured sha256 of the v1.2.0 GitHub tag tarball (matches ops/aur/PKGBUILD).
+const realSHA = "62f5bab6caa2afaa5cb816646eee6dc66084f72fdd946866837b81a8635e2f3d"
 
 // runReleaseCheck copies the real Makefile and ops/release-check.sh into a
 // scratch directory alongside the given CHANGELOG.md / PKGBUILD content,
@@ -188,7 +189,7 @@ func TestRealAURFiles(t *testing.T) {
 		t.Errorf(".SRCINFO sha256sums %q != PKGBUILD %q", got, sha)
 	}
 	if sha != realSHA {
-		t.Errorf("PKGBUILD sha256sums %q != measured v1.1.0 tarball sha", sha)
+		t.Errorf("PKGBUILD sha256sums %q != measured v1.2.0 tarball sha", sha)
 	}
 
 	cmd := exec.Command("make", "release-check", "VERSION=v"+pkgver) //nolint:gosec // pkgver read from the repo's own PKGBUILD
