@@ -13,7 +13,10 @@ Item {
   property int side: 1
   // Where the page is, in page widths: 0 in view, -1 or 1 off to that side.
   property real offset: page.current ? 0 : page.side
+  // Off while a snapshot is restored: the view is set, not navigated to.
+  property bool animate: true
   Behavior on offset {
+    enabled: page.animate
     NumberAnimation { duration: Style.duration(200); easing.type: Easing.OutCubic }
   }
 

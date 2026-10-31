@@ -96,6 +96,18 @@ TestCase {
     compare(panel.view.helpOpen, true)
   }
 
+  // A snapshot lands in its view at once: no slide to it (found by review:
+  // a pop-out into Help showed the window mid-slide).
+  function test_a_snapshot_lands_in_its_view_without_a_slide() {
+    openWith(readFixture(goldenUrl))
+    panel.close()
+    panel.open(JSON.stringify({ view: "help" }))
+    var pages = TestUtil.findAll(panel.testContentItem, function (n) { return n.side !== undefined && n.offset !== undefined })
+    compare(pages.length, 1, "more than one page showing right after the restore")
+    compare(pages[0].objectName, "helpPage")
+    compare(pages[0].offset, 0)
+  }
+
   function test_plain_open_keeps_the_view_showing() {
     openWith(readFixture(goldenUrl))
     panel.view.helpOpen = true

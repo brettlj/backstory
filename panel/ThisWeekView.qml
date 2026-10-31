@@ -27,6 +27,8 @@ Item {
   // opens the window) sets canPopOut; the window sets canPin and pinned
   // (pinned, it follows you to every workspace). Every view's header then
   // offers those buttons (HostButtons).
+  // Off while restore() sets the view (SlidePage animate).
+  property bool slideAnimated: true
   property bool canPopOut: false
   property bool canPin: false
   property bool pinned: false
@@ -182,6 +184,8 @@ Item {
       for (var i = 0; i < v.length && i < 500; i++) if (text(v[i], 4096) !== "") out[v[i]] = true
       return out
     }
+    // Lands in the restored view at once, with no slide to it.
+    root.slideAnimated = false
     root.showMain()
     root.expandedRows = keySet(state.expandedRows)
     root.expandedGroups = keySet(state.expandedGroups)
@@ -197,6 +201,7 @@ Item {
     } else if (state.view === "help") {
       root.helpOpen = true
     }
+    root.slideAnimated = true
     if (root.hasLoaded && !root.loading) root.applyPendingSelection()
   }
 
@@ -403,6 +408,7 @@ Item {
     }
 
     SlidePage {
+      animate: root.slideAnimated
       objectName: "mainPage"
       current: !root.groupEditorOpen && !root.memoryOpen && !root.helpOpen
       side: -1
@@ -528,6 +534,7 @@ Item {
     }
 
     SlidePage {
+      animate: root.slideAnimated
       objectName: "groupsPage"
       current: root.groupEditorOpen
 
@@ -546,6 +553,7 @@ Item {
     }
 
     SlidePage {
+      animate: root.slideAnimated
       objectName: "helpPage"
       current: root.helpOpen
 
@@ -563,6 +571,7 @@ Item {
     }
 
     SlidePage {
+      animate: root.slideAnimated
       objectName: "memoryPage"
       current: root.memoryOpen
 
