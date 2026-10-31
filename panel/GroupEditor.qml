@@ -72,10 +72,10 @@ Item {
   // moves; null before there is one (a project's key can be "").
   property var cursorKey: null
   // The host's gate: hover moves the highlight only on a real pointer move.
-  property PointerGate pointer: null
+  property PointerMoveGate pointer: null
 
-  function hoverRow(key) {
-    root.pointer.hover(function () { root.cursorKey = key })
+  function hoverRow(key, item, mouse) {
+    if (root.pointer.moved(item, mouse)) root.cursorKey = key
   }
 
   // Every row's project key, top to bottom: each group's members, then the
@@ -263,7 +263,7 @@ Item {
             current: root.cursorKey === modelData.key
             removable: true
             indent: Style.space(12)
-            onHovered: root.hoverRow(modelData.key)
+            onHovered: (item, mouse) => root.hoverRow(modelData.key, item, mouse)
             onPicked: root.pickProject(modelData.key)
             onRemoveRequested: root.clearGroup(modelData.key)
           }
@@ -297,7 +297,7 @@ Item {
         selected: root.isPicked(modelData.key)
         current: root.cursorKey === modelData.key
         removable: false
-        onHovered: root.hoverRow(modelData.key)
+        onHovered: (item, mouse) => root.hoverRow(modelData.key, item, mouse)
         onPicked: root.pickProject(modelData.key)
       }
     }

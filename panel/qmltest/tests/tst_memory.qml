@@ -443,17 +443,20 @@ TestCase {
   }
 
   // A click opens Memory with the pointer resting in the main view where a
-  // later record will land (no key held it): the records sliding in under
-  // it aren't hovers.
+  // later record will land (no key reset the gate): the records sliding in
+  // under it aren't hovers.
   function test_records_sliding_in_under_a_resting_pointer_keep_the_first_highlighted() {
     var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
     respondRecords(readFixture(recordsGolden))
     panel.open("{}")
     tryCompare(panel.view, "loading", false, 2000)
+    // The pointer crosses the main view's row first, so the gate has seen it
+    // somewhere else, then rests off the rows.
+    var row = TestUtil.findFirst(panel.testContentItem, function (n) { return n.summary && n.stripCounts !== undefined })
+    act.hover(row, { until: function () { return row.selected } })
     act.hover(panel.testContentItem, { x: 100, y: 140 })
     act.settled(function () { return panel.testContentItem.height > 160 }, "the main view is shorter than the resting spot")
-    var gate = panel.view.resources.filter(function (r) { return r.seenAt !== undefined })[0]
-    act.settled(function () { return gate.seenAt !== null }, "the pointer gate never saw the pointer")
+    wait(100)
     panel.view.openMemory(projectKey, "acme", cwd)
     act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") && recordItem(ids[4]) !== null }, "Memory never opened")
     wait(200)

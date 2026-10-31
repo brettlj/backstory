@@ -17,7 +17,8 @@ Column {
   property real nowMs: Date.now()
 
   signal launchRequested(string agent)
-  signal hoveredAgent(string agent)
+  // Each pointer move over a sub-row, for the view's PointerMoveGate.
+  signal hoveredAgent(string agent, var item, var mouse)
 
   width: parent ? parent.width : Style.space(360)
   spacing: 0
@@ -53,7 +54,7 @@ Column {
         id: subMouse
         anchors.fill: parent
         hoverEnabled: true
-        onEntered: root.hoveredAgent(sub.agentId)
+        onPositionChanged: (mouse) => root.hoveredAgent(sub.agentId, subMouse, mouse)
         cursorShape: Qt.PointingHandCursor
         onClicked: root.launchRequested(sub.agentId)
       }

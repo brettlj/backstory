@@ -49,7 +49,8 @@ Item {
   // this project's cwd (AGENT-CONTRACT.md "same-agent resume is reopening
   // a terminal at the session's cwd"); the buttons are Continue and Memory.
   signal openTerminal(string cwd)
-  signal hovered()
+  // Each pointer move over the row, for the view's PointerMoveGate.
+  signal hovered(var item, var mouse)
   signal continueRequested()
   signal toggleExpanded()
   signal openMemory(string projectKey, string displayName, string cwd)
@@ -69,7 +70,7 @@ Item {
     id: rowMouse
     anchors.fill: parent
     hoverEnabled: true
-    onEntered: root.hovered()
+    onPositionChanged: (mouse) => root.hovered(rowMouse, mouse)
     cursorShape: Qt.PointingHandCursor
     onClicked: root.openTerminal(Model.summaryCwd(root.summary))
   }

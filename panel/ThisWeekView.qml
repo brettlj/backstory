@@ -45,9 +45,9 @@ Item {
   property bool memoryOpen: false
   property bool helpOpen: false
   // Whichever way a view comes in, it lands under a still pointer.
-  onGroupEditorOpenChanged: pointerGate.hold()
+  onGroupEditorOpenChanged: pointerGate.reset()
   onMemoryOpenChanged: {
-    pointerGate.hold()
+    pointerGate.reset()
     root.memoryWaitOver = false
     if (root.memoryOpen) memoryWait.restart()
   }
@@ -55,7 +55,7 @@ Item {
   // "Loading records..." if they are slow; the main view stays till then.
   property bool memoryWaitOver: false
   readonly property bool memoryShowing: root.memoryOpen && (memoryPane.ready || root.memoryWaitOver)
-  onHelpOpenChanged: pointerGate.hold()
+  onHelpOpenChanged: pointerGate.reset()
   property string memoryProjectKey: ""
   property string memoryDisplayName: ""
   property string memoryLocation: ""
@@ -300,7 +300,7 @@ Item {
   // their own keys; the row keys act only on the main body. A text field in
   // Groups takes its keys first, so typing there stays text.
   function handleKey(key, modifiers) {
-    pointerGate.hold()
+    pointerGate.reset()
     if (key === Qt.Key_Escape) { root.closeRequested(); return true }
     if (key === Qt.Key_P && root.canPopOut) { root.popOutRequested(); return true }
     if (key === Qt.Key_U && (root.groupEditorOpen || root.memoryOpen || root.helpOpen)) { root.showMain(); return true }
@@ -380,7 +380,12 @@ Item {
 
   ContinueAction { id: continueAction }
 
-  PointerGate { id: pointerGate }
+  // Hover moves the selection only when the pointer really moves, not when
+  // rows slide or scroll under a still one (Omarchy's own, as its menu uses).
+  PointerMoveGate {
+    id: pointerGate
+    referenceItem: root
+  }
 
   Timer {
     id: memoryWait
@@ -395,7 +400,7 @@ Item {
       onStreamFinished: {
         root.loading = false
         root.hasLoaded = true
-        pointerGate.hold()
+        pointerGate.reset()
         try {
           root.weekData = JSON.parse(text || "{}")
           if (root.pendingSelection) root.applyPendingSelection()
@@ -537,7 +542,7 @@ Item {
             onOpenTerminal: (cwd) => root.openTerminal(cwd)
             onContinueRequested: (summary) => root.continueOn(summary)
             onOpenMemory: (projectKey, displayName, cwd) => root.openMemory(projectKey, displayName, cwd)
-            onHoverRow: (summary, agent) => pointerGate.hover(function () { root.selectRow(summary, agent) })
+            onHoverRow: (summary, agent, item, mouse) => { if (pointerGate.moved(item, mouse)) root.selectRow(summary, agent) }
           }
         }
 

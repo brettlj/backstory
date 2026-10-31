@@ -25,7 +25,8 @@ Item {
   property real indent: 0
 
   signal picked()
-  signal hovered()
+  // Each pointer move over the row, for the editor's PointerMoveGate.
+  signal hovered(var item, var mouse)
   signal removeRequested()
 
   implicitWidth: parent ? parent.width : Style.space(320)
@@ -47,7 +48,7 @@ Item {
     anchors.rightMargin: removeButton.visible ? Style.space(24) : 0
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
-    onEntered: root.hovered()
+    onPositionChanged: (mouse) => root.hovered(rowMouse, mouse)
     onClicked: root.picked()
   }
 

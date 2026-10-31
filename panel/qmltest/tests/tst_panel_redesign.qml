@@ -622,6 +622,29 @@ TestCase {
     act.moveAway(panel.testContentItem)
   }
 
+  // The pointer moved off the rows (onto the top of the card) and rests
+  // there; j scrolls rows up under it. The gate last saw it on row 1, so
+  // without a reset on each key the row arriving would count as a move.
+  function test_rows_scrolling_under_a_pointer_resting_off_the_rows_keep_the_keys_selection() {
+    open(longRecentPayload())
+    var rows = recentRows()
+    act.hover(rows[1], { until: function () { return panel.view.selectedIndex === 1 }, desc: "hovering row 1" })
+    act.hover(panel.testScroller, { x: 40, y: 4 })
+    var n = 1
+    function rowUnderPointer() {
+      return recentRows().some(function (r) { var p = r.mapFromItem(panel.testScroller, 40, 4); return p.y >= 0 && p.y < r.height })
+    }
+    while (!rowUnderPointer() && n < panel.view.navRows.length - 1) {
+      press(Qt.Key_J)
+      n++
+      act.settledEq(panel.view, "selectedIndex", n)
+    }
+    verify(rowUnderPointer(), "j never scrolled a row under the pointer")
+    wait(200)
+    compare(panel.view.selectedIndex, n)
+    act.moveAway(panel.testContentItem)
+  }
+
   // After a key, the first real move onto another row counts at once.
   function test_a_real_move_after_a_key_moves_the_selection() {
     open(payload())

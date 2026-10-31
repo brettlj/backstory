@@ -10,3 +10,4 @@ PanelToolTip 1.0 PanelToolTip.qml
 Panel 1.0 Panel.qml
 KeyboardPanel 1.0 KeyboardPanel.qml
 OverlayWindow 1.0 OverlayWindow.qml
+PointerMoveGate 1.0 PointerMoveGate.qml
