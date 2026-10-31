@@ -117,6 +117,15 @@ TestCase {
     compare(popOutButton(), null)
   }
 
+  function test_window_ignores_p() {
+    openWith(readFixture(goldenUrl))
+    var asked = 0
+    panel.view.popOutRequested.connect(function () { asked++ })
+    verify(!panel.view.handleKey(Qt.Key_P, Qt.NoModifier))
+    compare(asked, 0)
+    compare(panel.view.footerHint.indexOf("p pop out"), -1)
+  }
+
   function test_pop_out_button_asks_the_host() {
     panel.view.canPopOut = true
     openWith(readFixture(goldenUrl))

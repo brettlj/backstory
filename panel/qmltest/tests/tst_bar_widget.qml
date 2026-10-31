@@ -142,6 +142,18 @@ TestCase {
     compare(widget.opened, false)
   }
 
+  function test_p_pops_out_from_a_sub_view() {
+    var widget = start(fixture())
+    var content = openPopup(widget)
+    var view = TestUtil.findFirst(content, function (n) { return n.canPopOut !== undefined })
+    view.memoryOpen = true
+    verify(view.footerHint.indexOf("p pop out") >= 0, "footer never listed p: " + view.footerHint)
+    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    compare(widget.opened, false)
+    var run = act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
+    compare(JSON.parse(run.command[4]).view, "memory")
+  }
+
   function test_pop_out_closes_the_popup_and_summons_the_window() {
     var widget = start(fixture())
     var content = openPopup(widget)
