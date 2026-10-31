@@ -17,6 +17,10 @@ Item {
   id: root
 
   signal closeRequested()
+  // Set where the view can pop out (the bar popup): the header then offers
+  // the pop-out button, as the main view's does.
+  property bool canPopOut: false
+  signal popOutRequested()
 
   property var tools: []
   property string errorText: ""
@@ -72,6 +76,15 @@ Item {
       glyph: Glyphs.help()
       title: "Help"
       status: "Keys, agent tools and groups"
+
+      PanelActionButton {
+        visible: root.canPopOut
+        iconText: Glyphs.popOut()
+        tooltipText: "Pop out"
+        foreground: Commons.Color.popups.text
+        hoverColor: Commons.Color.accent
+        onClicked: root.popOutRequested()
+      }
 
       PanelActionButton {
         iconText: Glyphs.back()

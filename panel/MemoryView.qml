@@ -26,6 +26,10 @@ Item {
 
   signal changed()
   signal closeRequested()
+  // Set where the view can pop out (the bar popup): the header then offers
+  // the pop-out button, as the main view's does.
+  property bool canPopOut: false
+  signal popOutRequested()
   // Asks the scroll view to show `target` (the confirm, note or error a
   // click just produced), so nobody scrolls to find the result of a click.
   signal reveal(Item target)
@@ -283,6 +287,15 @@ Item {
       glyph: Glyphs.memory()
       title: "Memory"
       status: root.displayName + " · " + root.records.length + (root.records.length === 1 ? " saved record" : " saved records")
+
+      PanelActionButton {
+        visible: root.canPopOut
+        iconText: Glyphs.popOut()
+        tooltipText: "Pop out"
+        foreground: Commons.Color.popups.text
+        hoverColor: Commons.Color.accent
+        onClicked: root.popOutRequested()
+      }
 
       PanelActionButton {
         iconText: Glyphs.history()

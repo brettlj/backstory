@@ -541,6 +541,8 @@ Item {
         id: groupEditor
         visible: root.groupEditorOpen
         width: parent.width
+        canPopOut: root.canPopOut
+        onPopOutRequested: root.popOutRequested()
         onReveal: (target) => root.revealInScroller(target)
         onCloseRequested: root.groupEditorOpen = false
         onChanged: root.refresh()
@@ -549,6 +551,8 @@ Item {
       HelpView {
         visible: root.helpOpen
         width: parent.width
+        canPopOut: root.canPopOut
+        onPopOutRequested: root.popOutRequested()
         onCloseRequested: root.helpOpen = false
       }
 
@@ -559,6 +563,8 @@ Item {
         projectKey: root.memoryProjectKey
         displayName: root.memoryDisplayName
         location: root.memoryLocation
+        canPopOut: root.canPopOut
+        onPopOutRequested: root.popOutRequested()
         onReveal: (target) => root.revealInScroller(target)
         onCloseRequested: root.memoryOpen = false
         onChanged: root.refresh()

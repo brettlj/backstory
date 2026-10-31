@@ -54,6 +54,10 @@ Item {
 
   signal changed()
   signal closeRequested()
+  // Set where the view can pop out (the bar popup): the header then offers
+  // the pop-out button, as the main view's does.
+  property bool canPopOut: false
+  signal popOutRequested()
   // Asks the scroll view to show `target`, the row the keys moved to.
   signal reveal(Item target)
 
@@ -199,6 +203,15 @@ Item {
       title: "Groups"
       status: header.groupCount + (header.groupCount === 1 ? " group · " : " groups · ")
         + header.projectCount + (header.projectCount === 1 ? " project this week" : " projects this week")
+
+      PanelActionButton {
+        visible: root.canPopOut
+        iconText: Glyphs.popOut()
+        tooltipText: "Pop out"
+        foreground: Commons.Color.popups.text
+        hoverColor: Commons.Color.accent
+        onClicked: root.popOutRequested()
+      }
 
       PanelActionButton {
         iconText: Glyphs.back()

@@ -134,6 +134,19 @@ TestCase {
     act.clickWhenReady(popOutButton, { desc: "pop-out button", until: function () { return asked === 1 } })
   }
 
+  function test_each_sub_view_header_offers_the_pop_out() {
+    panel.view.canPopOut = true
+    openWith(readFixture(goldenUrl))
+    var asked = 0
+    panel.view.popOutRequested.connect(function () { asked++ })
+    var views = ["helpOpen", "groupEditorOpen", "memoryOpen"]
+    for (var i = 0; i < views.length; i++) {
+      panel.view.showMain()
+      panel.view[views[i]] = true
+      act.clickWhenReady(popOutButton, { desc: "pop-out button in " + views[i], until: function () { return asked === i + 1 } })
+    }
+  }
+
   function test_renders_golden_display_names() {
     openWith(readFixture(goldenUrl))
     var golden = JSON.parse(readFixture(goldenUrl))
