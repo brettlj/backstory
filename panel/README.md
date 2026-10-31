@@ -144,11 +144,13 @@ Two surfaces show the same view (`ThisWeekView.qml`):
 
 ```sh
 omarchy-shell shell summon backstory.this-week '{}'
-omarchy-shell shell toggle backstory.this-week '{}'   # summon if closed, hide if open
+omarchy-shell shell toggle backstory.this-week '{}'   # summon if closed, hide if focused, else focus it
 omarchy-shell shell hide backstory.this-week
 ```
 
-`CTRL+SHIFT+B` (`ops/hyprland/backstory.lua`) runs the toggle. A summon's
+`CTRL+SHIFT+B` (`ops/hyprland/backstory.lua`) runs the toggle. With the
+window open but not focused, toggle focuses it, moving it to the workspace
+you are on first unless it is pinned (the pin button in its header). A summon's
 payload may be a snapshot from `ThisWeekView.snapshot()`, which the window
 restores (the pop-out sends one); `{}` opens it as it was.
 
