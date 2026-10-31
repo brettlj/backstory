@@ -7,3 +7,5 @@ TextField 1.0 TextField.qml
 BarIconButton 1.0 BarIconButton.qml
 PanelSeparator 1.0 PanelSeparator.qml
 PanelToolTip 1.0 PanelToolTip.qml
+Panel 1.0 Panel.qml
+KeyboardPanel 1.0 KeyboardPanel.qml

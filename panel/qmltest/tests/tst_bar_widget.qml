@@ -7,10 +7,8 @@ import "../../js/launchers.js" as Launchers
 
 // BarWidget.qml: shows the `here` project's short name (glyph only when
 // there is none) and an attention dot iff Attention is non-empty. Left
-// click issues the toggle argv (task 4fe02e30 round 4 desk defect A, via
-// js/launchers.js's barToggleCommand(), the same MEASURED FIX
-// ridgetopai.omarcade's own Marquee.qml:253 uses), right click is Continue
-// on `here`, middle click a refresh (task fc1f340d).
+// click toggles its popup (a KeyboardPanel holding ThisWeekView), right
+// click is Continue on `here`, middle click a refresh (task fc1f340d).
 TestCase {
   id: testCase
   name: "BarWidget"
@@ -104,7 +102,7 @@ TestCase {
   // bar sits above the icons beside it: it takes the bar's own thickness.
   function test_fills_the_bar_thickness() {
     var widget = start(fixture())
-    widget.bar = { barSize: 31, fontFamily: "sans-serif" }
+    widget.bar = fakeBar(31)
     compare(widget.implicitHeight, 31)
   }
 
@@ -115,13 +113,42 @@ TestCase {
     verify(barLabel(widget) === null, "label shown with no here project")
   }
 
-  function test_left_click_toggles_via_omarchy_shell() {
-    var widget = start(fixture())
-    act.clickWhenReady(widget, { button: Qt.LeftButton, desc: "bar widget" })
+  // The bar a Panel root is given: barSize, the label font, and the
+  // panel-switching hook Tab calls (it records each direction).
+  function fakeBar(size) {
+    return Qt.createQmlObject('import QtQuick; QtObject { property int barSize: ' + size
+      + '; property string fontFamily: "sans-serif"; property var switched: []; '
+      + 'function switchPanelFrom(panel, direction) { switched = switched.concat([direction]); return true } }', testCase)
+  }
 
-    var last = act.detachedNext(function (c) { return JSON.stringify(c.command) === JSON.stringify(Launchers.barToggleCommand()) }, "left click toggle")
-    compare(JSON.stringify(last.command), JSON.stringify(Launchers.barToggleCommand()))
-    compare(JSON.stringify(last.command), JSON.stringify(["omarchy-shell", "shell", "toggle", "backstory.this-week", "{}"]))
+  function openPopup(widget) {
+    act.clickWhenReady(widget, { button: Qt.LeftButton, desc: "bar widget", until: function () { return widget.opened } })
+    act.settled(function () { return widget.testPopup.loadedContent !== null }, "popup content never built")
+    return widget.testPopup.loadedContent
+  }
+
+  function test_left_click_opens_the_popup_with_this_week() {
+    var widget = start(fixture())
+    var content = openPopup(widget)
+    verify(typeof content.handleKey === "function", "popup content has no key handler")
+    compare(Quickshell.execDetachedCalls.length, 0, "a left click ran a command: " + JSON.stringify(Quickshell.execDetachedCalls))
+    act.clickWhenReady(widget, { button: Qt.LeftButton, desc: "bar widget again", until: function () { return !widget.opened } })
+  }
+
+  function test_esc_in_the_popup_closes_it() {
+    var widget = start(fixture())
+    var content = openPopup(widget)
+    verify(content.handleKey(Qt.Key_Escape, Qt.NoModifier))
+    compare(widget.opened, false)
+  }
+
+  function test_tab_moves_to_the_next_bar_panel() {
+    var widget = start(fixture())
+    widget.bar = fakeBar(26)
+    var content = openPopup(widget)
+    verify(content.handleKey(Qt.Key_Tab, Qt.NoModifier))
+    verify(content.handleKey(Qt.Key_Backtab, Qt.ShiftModifier))
+    compare(widget.bar.switched, [1, -1])
   }
 
   function test_label_drops_projects_prefix() {

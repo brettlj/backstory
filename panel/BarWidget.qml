@@ -1,7 +1,7 @@
 import QtQuick
-import Quickshell
 import Quickshell.Io
 import qs.Ui
+import qs.Ui as Ui
 import qs.Commons
 import qs.Commons as Commons
 import "js/model.js" as Model
@@ -10,37 +10,25 @@ import "js/launchers.js" as Launchers
 import "js/format.js" as Format
 
 // The "bar-widget" entry point (manifest.json "kinds": ["panel",
-// "bar-widget"], round 2 defect B: "Nothing on screen opens the panel; ...
-// add a bar widget ... whose click toggles the panel"). A single Nerd Font
-// glyph placed in the bar.
+// "bar-widget"]): the project you are in and an attention dot in the bar,
+// and a native Omarchy popup with the same view the window shows. Its root
+// is a qs.Ui Panel with a KeyboardPanel card, as Omarchy's own bar panels
+// are ($OMARCHY_PATH/shell/plugins/panels/monitor/Panel.qml), so the bar
+// closes it when another panel opens, Tab moves to the next bar panel, and
+// it closes on Esc or a click outside. The window (Panel.qml) stays the
+// plugin's "panel" kind: the shell's summon/toggle and CTRL+SHIFT+B open
+// that, since the shell routes them to the panel loader for a plugin that
+// is both kinds ($OMARCHY_PATH/shell/shell.qml isBarWidgetPanelPlugin).
 //
-// Round 4 desk defect A: a click here used to flip a shared PanelState
-// singleton directly, but the host only ever shows a plugin panel through
-// its OWN toggle machinery — the singleton flip never reached it, so
-// clicking the bar glyph did nothing. MEASURED FIX (hand-patched on the
-// desk, confirmed working): route the click through the same call the
-// host's own bar-widget plugins use — ridgetopai.omarcade's own
-// Marquee.qml:253 — `Quickshell.execDetached(["omarchy-shell", "shell",
-// "toggle", "backstory.this-week", "{}"])`, named once in js/launchers.js
-// (task 4fe02e30 DONE WHEN clause 5's "every command the QML runs comes
-// from js/launchers.js"). This file spawns no process of its own beyond
-// that one execDetached call — like every file in this plugin except
-// js/launchers.js itself.
-//
-// It shows the `here` project's short name (the calendar glyph only when
-// there is no `here`) and a dot when Attention is non-empty. Left click
-// toggles the panel, right click is Continue on `here`, middle click
-// refreshes; it refreshes on every click (the panel opening or closing),
-// and every refreshIntervalMs.
-Item {
+// It shows the `here` project's short name beside the glyph. Left click
+// toggles the popup, right click is Continue on `here`, middle click
+// refreshes; it refreshes on every click and every refreshIntervalMs.
+Ui.Panel {
   id: root
+  moduleName: "backstory.this-week"
 
   property int refreshIntervalMs: 60000
   property var payload: null
-  // Injected by the host. Its slots line up at their top, so the widget
-  // takes the bar's full thickness to sit level with the icons beside it
-  // ($OMARCHY_PATH/shell/plugins/bar/README.md, "Custom user modules").
-  property var bar: null
 
   readonly property var hereData: root.payload ? Model.topHere(root.payload) : null
   readonly property var hereProject: root.payload ? Derive.hereSummary(root.payload) : null
@@ -53,7 +41,13 @@ Item {
   readonly property string scrollGlyph: String.fromCodePoint(0xF0BC2)
 
   implicitWidth: button.implicitWidth
+  // The bar lines its slots up at their top, so the widget takes the bar's
+  // full thickness to sit level with the icons beside it
+  // ($OMARCHY_PATH/shell/plugins/bar/README.md, "Custom user modules").
   implicitHeight: root.bar ? root.bar.barSize : Style.bar.sizeHorizontal
+
+  // Test-only handle onto the popup (its content is built on first open).
+  readonly property var testPopup: popup
 
   function refresh() {
     continueAction.refreshDefaultAgent()
@@ -107,7 +101,7 @@ Item {
       } else if (mouseButton === Qt.MiddleButton) {
         root.refresh()
       } else {
-        Quickshell.execDetached(Launchers.barToggleCommand())
+        root.toggle()
         root.refresh()
       }
     }
@@ -132,6 +126,42 @@ Item {
       anchors.top: parent.top
       anchors.rightMargin: -Style.space(1)
       borderSpec: Border.flat(Commons.Color.popups.background, Style.spacing.hairline)
+    }
+  }
+
+  KeyboardPanel {
+    id: popup
+    anchorItem: button
+    owner: root
+    bar: root.bar
+    open: root.opened
+    focusTarget: popup.loadedContent
+    contentWidth: popup.fittedContentWidth(Style.space(380))
+    contentHeight: popup.fittedContentHeight(popup.loadedContentHeight, Style.space(640))
+
+    content: Item {
+      implicitHeight: view.implicitHeight
+      focus: true
+
+      // Tab and Shift+Tab move to the next bar panel; the view takes the rest.
+      function handleKey(key, modifiers) {
+        if (key === Qt.Key_Tab || key === Qt.Key_Backtab) {
+          root.switchPanel(key === Qt.Key_Backtab || (modifiers & Qt.ShiftModifier) ? -1 : 1)
+          return true
+        }
+        return view.handleKey(key, modifiers)
+      }
+
+      Keys.onPressed: (event) => { event.accepted = handleKey(event.key, event.modifiers) }
+
+      ThisWeekView {
+        id: view
+        anchors.fill: parent
+        edge: 0
+        footerBottomMargin: 0
+        active: root.opened
+        onCloseRequested: root.close()
+      }
     }
   }
 }

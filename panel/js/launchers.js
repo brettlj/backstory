@@ -37,10 +37,6 @@ function thisWeekCommand() {
   return ["backstory", "this-week", "--json", "--here", "auto"]
 }
 
-function barToggleCommand() {
-  return ["omarchy-shell", "shell", "toggle", "backstory.this-week", "{}"]
-}
-
 // affirmCommand dismisses a stale handoff's Needs You row: the CLI writes a
 // human-declared affirm the freshness boundary honours (decision 6caaac1d).
 function affirmCommand(handoffId) {
