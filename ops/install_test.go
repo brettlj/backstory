@@ -82,8 +82,10 @@ exit 0`)
 	f.fake("pgrep", `echo "pgrep $*" >> "$FAKE_LOG"; [ -e "$FAKE_LOCKED" ]`)
 	f.fake("omarchy-restart-shell", `echo "omarchy-restart-shell" >> "$FAKE_LOG"`)
 	// hyprctl: record the call; configerrors prints FAKE_HYPR_ERRORS when it
-	// exists. The runner's own hyprctl would reach its live Hyprland.
+	// exists, and fails when FAKE_HYPR_CHECK_FAILS does. The runner's own
+	// hyprctl would reach its live Hyprland.
 	f.fake("hyprctl", `echo "hyprctl $*" >> "$FAKE_LOG"
+[ "$1" = configerrors ] && [ -e "$FAKE_HYPR_CHECK_FAILS" ] && exit 3
 [ "$1" = configerrors ] && [ -f "$FAKE_HYPR_ERRORS" ] && cat "$FAKE_HYPR_ERRORS"
 exit 0`)
 	// systemd-run: record the call; the unit does not run unless a test
@@ -152,6 +154,7 @@ func (f *installFixture) make(target string) (string, error) {
 		"FAKE_ACTIVE="+filepath.Join(filepath.Dir(f.log), "active"),
 		"FAKE_LOCKED="+filepath.Join(filepath.Dir(f.log), "locked"),
 		"FAKE_HYPR_ERRORS="+filepath.Join(filepath.Dir(f.log), "hypr-errors"),
+		"FAKE_HYPR_CHECK_FAILS="+filepath.Join(filepath.Dir(f.log), "hypr-check-fails"),
 		"HYPRLAND_INSTANCE_SIGNATURE=", // an ssh session has none; never inherit the developer's
 		// keep the build off the (empty) fixture HOME
 		"GOCACHE="+goEnv(f.t, "GOCACHE"),
@@ -354,6 +357,21 @@ func TestInstallerWarnsOnHyprlandConfigErrors(t *testing.T) {
 	if !strings.Contains(out, "warning: Hyprland reports config errors after reloading:") || !strings.Contains(out, "backstory.lua:3: unexpected symbol") {
 		t.Errorf("install did not warn with Hyprland's config errors:\n%s", out)
 	}
+}
+
+// A config check that fails is a warning too: the install goes on to the
+// panel and the rest (found by review: under set -e it stopped there).
+func TestInstallerGoesOnWhenTheConfigCheckFails(t *testing.T) {
+	f := newInstallFixture(t)
+	f.writeHyprland("require(\"hypr.backstory\")\n")
+	f.extra = append(f.extra, "HYPRLAND_INSTANCE_SIGNATURE=fixture")
+	f.flag("hypr-check-fails", true)
+	out := f.mustMake("install")
+	t.Log(out)
+	if !strings.Contains(out, "warning: reloaded Hyprland but could not check its config") {
+		t.Errorf("install did not warn that the check failed:\n%s", out)
+	}
+	mustExist(t, filepath.Join(f.panelDir(), "Panel.qml"))
 }
 
 // Without the require line, or with no Hyprland to reach, install leaves

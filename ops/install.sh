@@ -120,7 +120,10 @@ reload_hyprland() {
 		echo "warning: could not reload Hyprland; the keybind applies at its next reload"
 		return 0
 	fi
-	errors="$(HYPRLAND_INSTANCE_SIGNATURE="$sig" hyprctl configerrors 2>/dev/null)"
+	if ! errors="$(HYPRLAND_INSTANCE_SIGNATURE="$sig" hyprctl configerrors 2>/dev/null)"; then
+		echo "warning: reloaded Hyprland but could not check its config"
+		return 0
+	fi
 	if [ -n "$(printf '%s' "$errors" | tr -d '[:space:]')" ]; then
 		echo "warning: Hyprland reports config errors after reloading:"
 		printf '%s\n' "$errors"
