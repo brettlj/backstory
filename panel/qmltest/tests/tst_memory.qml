@@ -337,6 +337,31 @@ TestCase {
     compare(rules[1].objectName, "forgetDivider")
   }
 
+  // ---- Expanded records and history, kept across a pop-out ----
+  function recordItem(id) {
+    return TestUtil.findFirst(panel.testContentItem, function (n) { return n.rid === id })
+  }
+
+  function test_clicking_a_record_expands_it_and_the_snapshot_lists_it() {
+    var id = JSON.parse(readFixture(recordsGolden)).records[0].id
+    openMemory(readFixture(recordsGolden))
+    act.clickWhenReady(function () { return recordItem(id) }, { desc: "first record", until: function () { return recordItem(id).expanded } })
+    compare(JSON.stringify(panel.view.memoryView.snapshot()), JSON.stringify({ history: false, expanded: [id] }))
+  }
+
+  function test_restore_opens_with_history_and_the_record_expanded() {
+    var history = readFixture(historyGolden)
+    var id = JSON.parse(history).records[0].id
+    respondRecords(history, true)
+    panel.open("{}")
+    tryCompare(panel.view, "loading", false, 2000)
+    panel.view.memoryView.restore({ history: true, expanded: [id, 42] })
+    clickByTooltip("Memory", { until: function () { return panel.view.memoryOpen } })
+    act.launchedNext(isRecordsRun(true), "memory history run")
+    act.settled(function () { var r = recordItem(id); return r !== null && r.expanded }, "restored record never shown expanded")
+    compare(ProcessController.runs.filter(isRecordsRun(false)).length, 0, "fetched without history first")
+  }
+
   // ---- The header: a hero row naming the project and its record count ----
   function test_header_names_the_project_and_counts_saved_records() {
     var golden = JSON.parse(readFixture(recordsGolden))

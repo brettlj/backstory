@@ -32,6 +32,11 @@ Item {
 
   property var payload: ({})
   property bool showHistory: false
+  // Which records show their full text, keyed by record id. Opening the view
+  // starts from pendingExpanded: empty, unless restore() was handed a
+  // snapshot (the bar popup's pop-out into the window).
+  property var expandedIds: ({})
+  property var pendingExpanded: ({})
   property string errorText: ""
   property bool busy: false
 
@@ -56,12 +61,35 @@ Item {
 
   onVisibleChanged: {
     if (root.visible) {
+      root.expandedIds = root.pendingExpanded
+      root.pendingExpanded = {}
       root.errorText = ""
       root.confirmingId = ""
       root.pendingPurge = null
       root.purgeNote = ""
       root.refresh()
     }
+  }
+
+  function toggleExpanded(recordId) {
+    var next = Object.assign({}, root.expandedIds)
+    if (next[recordId]) delete next[recordId]
+    else next[recordId] = true
+    root.expandedIds = next
+  }
+
+  // What the view shows beyond its project: the history toggle and the
+  // expanded records. restore() takes effect when the view next opens.
+  function snapshot() {
+    return { history: root.showHistory, expanded: Object.keys(root.expandedIds) }
+  }
+
+  function restore(state) {
+    root.showHistory = state.history === true
+    var ids = {}
+    var list = Array.isArray(state.expanded) ? state.expanded : []
+    for (var i = 0; i < list.length; i++) if (typeof list[i] === "string") ids[list[i]] = true
+    root.pendingExpanded = ids
   }
 
   function toggleHistory() {
@@ -280,7 +308,7 @@ Item {
         readonly property bool deleted: Records.recordStatus(modelData) === "deleted"
         readonly property string body: Records.recordText(modelData)
         readonly property Item confirmFlow: recordConfirm
-        property bool expanded: false
+        readonly property bool expanded: !!root.expandedIds[rec.rid]
 
         width: content.width
         height: recColumn.implicitHeight + Style.spacing.rowGap
@@ -288,7 +316,7 @@ Item {
         MouseArea {
           anchors.fill: parent
           cursorShape: Qt.PointingHandCursor
-          onClicked: rec.expanded = !rec.expanded
+          onClicked: root.toggleExpanded(rec.rid)
         }
 
         Column {

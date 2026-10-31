@@ -60,6 +60,7 @@ Item {
   property real edge: Style.spacing.panelPadding
   property real footerBottomMargin: Style.space(12)
   readonly property Item scrollArea: scroller
+  readonly property Item memoryView: memoryPane
 
   // Which group rows are expanded, keyed by group name. Collapsed by
   // default — a group is a human-made summary already; a click reveals it.
@@ -463,6 +464,7 @@ Item {
       }
 
       MemoryView {
+        id: memoryPane
         visible: root.memoryOpen
         width: parent.width
         projectKey: root.memoryProjectKey
