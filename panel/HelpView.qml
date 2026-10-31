@@ -73,9 +73,10 @@ Item {
     spacing: Style.spacing.panelGap
 
     HeroHeader {
-      glyph: Glyphs.help()
+      showBack: true
       title: "Help"
       status: "Keys, agent tools and groups"
+      onBack: root.closeRequested()
 
       PanelActionButton {
         visible: root.canPopOut
@@ -84,14 +85,6 @@ Item {
         foreground: Commons.Color.popups.text
         hoverColor: Commons.Color.accent
         onClicked: root.popOutRequested()
-      }
-
-      PanelActionButton {
-        iconText: Glyphs.back()
-        tooltipText: "Back"
-        foreground: Commons.Color.foreground
-        hoverColor: Commons.Color.accent
-        onClicked: root.closeRequested()
       }
     }
 

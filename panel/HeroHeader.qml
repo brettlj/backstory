@@ -1,13 +1,20 @@
 import QtQuick
+import qs.Ui
 import qs.Commons
 import qs.Commons as Commons
+import "js/glyphs.js" as Glyphs
 
 // A view's hero row, as Omarchy's own panels draw it (Ui/PanelHero.qml): a
 // glyph at Style.font.display, a bold title and a dim uppercased status line,
-// with the view's buttons (this item's children) at the trailing edge.
+// with the view's buttons (this item's children) at the trailing edge. A
+// sub-view leads with a back button (showBack) in place of the glyph, as a
+// page you came into does.
 Item {
   id: root
 
+  signal back()
+
+  property bool showBack: false
   property string glyph: ""
   property string title: ""
   property string status: ""
@@ -24,7 +31,18 @@ Item {
     anchors.verticalCenter: parent.verticalCenter
     spacing: Style.space(14)
 
+    PanelActionButton {
+      visible: root.showBack
+      iconText: Glyphs.back()
+      tooltipText: "Back"
+      foreground: Commons.Color.popups.text
+      hoverColor: Commons.Color.accent
+      anchors.verticalCenter: parent.verticalCenter
+      onClicked: root.back()
+    }
+
     Text {
+      visible: root.glyph !== ""
       textFormat: Text.PlainText
       text: root.glyph
       font.family: Style.font.family

@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Io
 import "testutil.js" as TestUtil
 import "../../js/launchers.js" as Launchers
+import "../../js/glyphs.js" as Glyphs
 
 // The embedded GroupEditor suite (task 4fe02e30 round 4 desk defect B: the
 // editor used to render OUTSIDE the PanelWindow's own surface — see
@@ -229,6 +230,14 @@ TestCase {
     panel.testKeyItem.forceActiveFocus()
     act.pressKey(Qt.Key_U)
     act.settledEq(panel.view, "groupEditorOpen", false)
+  }
+
+  function test_header_is_back_then_groups_then_the_counts() {
+    openGroupEditor()
+    expectHeroStatus("0 groups · 1 project this week")
+    var t = TestUtil.collectVisibleTexts(panel.testContentItem)
+    var i = t.indexOf("Groups")
+    compare(t.slice(i - 1, i + 2), [Glyphs.back(), "Groups", "0 groups · 1 project this week"])
   }
 
   function test_header_counts_groups_and_projects() {

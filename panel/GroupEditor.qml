@@ -199,8 +199,9 @@ Item {
       id: header
       readonly property int groupCount: (root.groupsData.groups || []).length
       readonly property int projectCount: (root.groupsData.projects || []).length
-      glyph: Glyphs.gear()
+      showBack: true
       title: "Groups"
+      onBack: root.closeRequested()
       status: header.groupCount + (header.groupCount === 1 ? " group · " : " groups · ")
         + header.projectCount + (header.projectCount === 1 ? " project this week" : " projects this week")
 
@@ -211,14 +212,6 @@ Item {
         foreground: Commons.Color.popups.text
         hoverColor: Commons.Color.accent
         onClicked: root.popOutRequested()
-      }
-
-      PanelActionButton {
-        iconText: Glyphs.back()
-        tooltipText: "Back"
-        foreground: Commons.Color.foreground
-        hoverColor: Commons.Color.accent
-        onClicked: root.closeRequested()
       }
     }
 

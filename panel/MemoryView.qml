@@ -284,9 +284,10 @@ Item {
 
     HeroHeader {
       id: header
-      glyph: Glyphs.memory()
-      title: "Memory"
-      status: root.displayName + " · " + root.records.length + (root.records.length === 1 ? " saved record" : " saved records")
+      showBack: true
+      title: root.displayName
+      status: "Memory · " + root.records.length + (root.records.length === 1 ? " saved record" : " saved records")
+      onBack: root.closeRequested()
 
       PanelActionButton {
         visible: root.canPopOut
@@ -303,14 +304,6 @@ Item {
         foreground: root.showHistory ? Commons.Color.accent : Commons.Color.popups.text
         hoverColor: Commons.Color.accent
         onClicked: root.toggleHistory()
-      }
-
-      PanelActionButton {
-        iconText: Glyphs.back()
-        tooltipText: "Back"
-        foreground: Commons.Color.popups.text
-        hoverColor: Commons.Color.accent
-        onClicked: root.closeRequested()
       }
     }
 

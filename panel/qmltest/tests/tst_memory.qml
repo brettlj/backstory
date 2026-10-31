@@ -5,6 +5,7 @@ import Quickshell.Io
 import "testutil.js" as TestUtil
 import "../../js/launchers.js" as Launchers
 import "../../js/memory.js" as MemoryJs
+import "../../js/glyphs.js" as Glyphs
 
 // The Memory view suite (task 04d28c19, decision 02c511b3 D5): drives the
 // real Panel.qml click path — a project row's Memory action -> MemoryView —
@@ -390,20 +391,22 @@ TestCase {
     compare(ProcessController.runs.filter(isRecordsRun(false)).length, 0, "fetched without history first")
   }
 
-  // ---- The header: a hero row naming the project and its record count ----
-  function test_header_names_the_project_and_counts_saved_records() {
+  // ---- The header: back first, the project as the title, then the view
+  // and its record count ----
+  function test_header_is_back_then_the_project_then_memory_and_the_count() {
     var golden = JSON.parse(readFixture(recordsGolden))
     verify(golden.records.length > 1, "fixture needs several records")
     openMemory(JSON.stringify(golden))
-    expectText("Memory")
-    expectText("acme · " + golden.records.length + " saved records")
+    var t = texts()
+    var i = t.indexOf("acme")
+    compare(t.slice(i - 1, i + 2), [Glyphs.back(), "acme", "Memory · " + golden.records.length + " saved records"])
   }
 
   function test_header_says_one_saved_record() {
     var golden = JSON.parse(readFixture(recordsGolden))
     golden.records = golden.records.slice(0, 1)
     openMemory(JSON.stringify(golden))
-    expectText("acme · 1 saved record")
+    expectText("Memory · 1 saved record")
   }
 
   // ---- Memory and Forget act on exactly the row (task a9a784ec) ----

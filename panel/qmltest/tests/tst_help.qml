@@ -192,7 +192,7 @@ TestCase {
     act.settled(function () { return texts().indexOf("Help") >= 0 }, "help header never rendered")
     var t = texts()
     var i = t.indexOf("Help")
-    compare(t.slice(i - 1, i + 2), [Glyphs.help(), "Help", "Keys, agent tools and groups"])
+    compare(t.slice(i - 1, i + 2), [Glyphs.back(), "Help", "Keys, agent tools and groups"])
   }
 
   function test_help_renders_fixture_tools_and_sections() {
