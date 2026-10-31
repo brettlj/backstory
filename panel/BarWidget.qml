@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import qs.Ui
 import qs.Ui as Ui
 import qs.Commons
@@ -65,6 +66,20 @@ Ui.Panel {
   }
 
   Component.onCompleted: root.refresh()
+
+  // The shortcut opens or closes this popup when the window is not open
+  // (ops/hyprland/backstory.lua): the shell routes its own summon and
+  // toggle to the window. One bar per monitor; the one on the focused
+  // monitor answers.
+  IpcHandler {
+    target: "backstory.this-week.popup"
+    enabled: !Hyprland.focusedMonitor || root.Screen.name === "" || root.Screen.name === Hyprland.focusedMonitor.name
+    function toggle(): string {
+      root.toggle()
+      if (root.opened) root.refresh()
+      return "ok"
+    }
+  }
 
   Timer {
     interval: root.refreshIntervalMs

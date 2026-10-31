@@ -10,6 +10,7 @@ QtObject {
   // Each toplevel: { address, title, activated, workspace: { id }, wayland: { appId } }
   property var toplevels: ({ values: [] })
   property var focusedWorkspace: null
+  property var focusedMonitor: null
   property var dispatched: []
 
   function dispatch(request) {
@@ -19,6 +20,7 @@ QtObject {
   function reset() {
     root.toplevels = { values: [] }
     root.focusedWorkspace = null
+    root.focusedMonitor = null
     root.dispatched = []
   }
 }

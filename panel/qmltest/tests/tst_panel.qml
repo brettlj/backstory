@@ -194,6 +194,15 @@ TestCase {
     }
   }
 
+  function test_toggle_if_open_leaves_a_closed_window_for_the_popup() {
+    listWindow(true, 1)
+    compare(panel.toggleIfOpen(), "closed")
+    compare(panel.opened, false)
+    openWith(readFixture(goldenUrl))
+    compare(panel.toggleIfOpen(), "ok")
+    compare(panel.opened, false, "the focused window did not close")
+  }
+
   // ---- The shortcut (toggle) with the window open ----
   function test_toggle_closes_the_window_when_it_has_focus() {
     listWindow(true, 1)

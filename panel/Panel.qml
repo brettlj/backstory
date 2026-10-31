@@ -118,8 +118,16 @@ Item {
     root.opened = false
   }
 
-  // CTRL+SHIFT+B and the shell's toggle: open the window; close it when it
-  // has focus; otherwise focus it, first moving it to the workspace you are
+  // The shortcut's first step (ops/hyprland/backstory.lua): toggle the
+  // window when it is open, and say so; "closed" sends the shortcut on to
+  // the bar popup.
+  function toggleIfOpen() {
+    if (!root.opened) return "closed"
+    root.toggle()
+    return "ok"
+  }
+
+  // The window's IPC toggle: open the window; close it when it has focus; otherwise focus it, first moving it to the workspace you are
   // on when it is elsewhere and not pinned.
   function toggle() {
     if (!root.opened) { root.open("{}"); return }
@@ -140,6 +148,7 @@ Item {
     function open(): string { root.open("{}"); return "ok" }
     function close(): string { root.close(); return "ok" }
     function toggle(): string { root.toggle(); return "ok" }
+    function toggleIfOpen(): string { return root.toggleIfOpen() }
     function refresh(): string { view.refresh(); return "ok" }
     function ping(): string { return "ok" }
   }

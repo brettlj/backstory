@@ -148,11 +148,13 @@ omarchy-shell shell toggle backstory.this-week '{}'   # summon if closed, hide i
 omarchy-shell shell hide backstory.this-week
 ```
 
-`CTRL+SHIFT+B` (`ops/hyprland/backstory.lua`) runs the window's own
-`omarchy-shell backstory.this-week toggle`, and `shell summon` when the
-window is not loaded. Its toggle closes the window when it has focus and
-otherwise focuses it, moving it to the workspace you are on first unless it
-is pinned (the pin button in its header). A summon's
+`CTRL+SHIFT+B` (`ops/hyprland/backstory.lua`) acts on the window when it is
+open (`omarchy-shell backstory.this-week toggleIfOpen`): it closes the window
+when it has focus and otherwise focuses it, moving it to the workspace you
+are on first unless it is pinned (the pin button in its header). Otherwise
+it toggles the bar popup (`omarchy-shell backstory.this-week.popup toggle`,
+answered by the bar on the focused monitor), and with no Backstory widget in
+the bar it opens the window. A summon's
 payload may be a snapshot from `ThisWeekView.snapshot()`, which the window
 restores (the pop-out sends one); `{}` opens it as it was.
 

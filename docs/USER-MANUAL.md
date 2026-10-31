@@ -199,14 +199,16 @@ memory yourself with `backstory recall` and `backstory records`
 The panel shows your week at a glance and lets you jump back into any project. It comes two
 ways, with the same content:
 
-- **The window**: press **`CTRL + SHIFT + B`**. It's an ordinary window you can move, and it
-  stays open while you use other bar panels. With it open, the key focuses it, and brings it to
-  your workspace if it's on another one; pressed while it has focus, the key closes it, as do its
-  close button and **`Esc`**. Its **pin** button keeps it on every workspace as you move between
+- **The bar popup**: press **`CTRL + SHIFT + B`**, or click the Backstory icon in the top bar
+  (if you added it; see `panel/README.md`). Without the icon in the bar, the key opens the window
+  instead.
+- **The window**: the popup's **pop-out** button opens it. It's an ordinary window you can move,
+  and it stays open while you use other bar panels. While it's open, **`CTRL + SHIFT + B`**
+  focuses it, and brings it to your workspace if it's on another one; pressed while it has focus,
+  the key closes it, as do its close button and **`Esc`**. Its **pin** button keeps it on every workspace as you move between
   them (a filled pin); unpinned (an outline pin), it stays on the workspace it opened on, which
   is how it opens.
-- **The bar popup**: click the Backstory icon in the top bar (if you added it; see
-  `panel/README.md`). It opens under the bar like Omarchy's own panels. **`Esc`**, a click
+- **More on the popup**: it opens under the bar like Omarchy's own panels. **`Esc`**, a click
   elsewhere, or a second click on the icon closes it, and **`Tab`** / **`Shift + Tab`** move to
   the next bar panel. Its **pop-out** button (next to the gear) closes the popup and opens the
   window where you were (also **`p`**): the same view, project, selection and scroll, including an open
