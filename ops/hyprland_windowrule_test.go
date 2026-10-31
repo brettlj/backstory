@@ -23,6 +23,27 @@ func TestHyprlandBindsPanelToggleToCtrlShiftB(t *testing.T) {
 	}
 }
 
+// TestHyprlandBindCommandDoesNotStartWithABracket: Hyprland's exec reads a
+// leading [ ] as window rules (`exec [workspace 2] app`), so a bind command
+// that opens with a shell test `[ ... ]` runs nothing (seen 2026-10-31 on
+// Hyprland 0.56: the key did nothing while the same command after a prefix
+// worked). The bind's shell test is written `test ...` instead.
+func TestHyprlandBindCommandDoesNotStartWithABracket(t *testing.T) {
+	raw, err := os.ReadFile("hyprland/backstory.lua")
+	if err != nil {
+		t.Fatalf("read backstory.lua: %v", err)
+	}
+	m := regexp.MustCompile(`hl\.dsp\.exec_cmd\("\s*(.)`).FindAllStringSubmatch(string(raw), -1)
+	if len(m) == 0 {
+		t.Fatal("no hl.dsp.exec_cmd(\"...\") in hyprland/backstory.lua")
+	}
+	for _, c := range m {
+		if c[1] == "[" {
+			t.Errorf("an exec_cmd command starts with [, which Hyprland reads as window rules: %q", c[0])
+		}
+	}
+}
+
 // No tracked file but the CHANGELOG (history) may still pair the old Omarchy
 // Browser bind with Backstory. The pattern is assembled so this file does not
 // match itself.
