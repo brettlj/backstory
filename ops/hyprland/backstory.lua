@@ -18,9 +18,7 @@ o.window(BACKSTORY, {
   -- No Hyprland window animation, as for Omarchy's own panels
   -- (apps/omarchy-shell.lua); Panel.qml fades the card in itself, as they do.
   no_anim = true,
-  -- No shadow either: Omarchy's panels have no Hyprland decoration, and without
-  -- the close animation a theme's shadow (a focus glow) stayed on screen.
-  no_shadow = true,
+  -- The theme's shadow (a focus glow) and border, as on any other window.
 })
 
 -- Keybind: with the This Week window open, focus it (bringing it to this
