@@ -179,6 +179,20 @@ QtObject {
   // ---- effects ----
 
   // Wait for a UI condition to hold.
+  // Moves the pointer over target (default its centre) and waits for
+  // opts.until, the hover's effect, when given. Pair with moveAway(): a
+  // cursor left over a row hovers it in the next test's panel.
+  function hover(target, opts) {
+    var o = opts || {}
+    testCase.mouseMove(target, o.x === undefined ? target.width / 2 : o.x, o.y === undefined ? target.height / 2 : o.y)
+    if (o.until) root.settled(o.until, (o.desc || "hover") + ": its effect never showed")
+  }
+
+  // Parks the pointer at item's top-left corner, off any row.
+  function moveAway(item) {
+    testCase.mouseMove(item, 0, 0)
+  }
+
   function settled(pred, msg) {
     testCase.tryVerify(pred, root.timeoutMs, msg === undefined ? "condition never settled" : msg)
   }

@@ -483,6 +483,32 @@ TestCase {
     act.settledEq(panel.view, "memoryOpen", false)
   }
 
+  function recentRows() {
+    return TestUtil.findAll(panel.testContentItem, function (n) { return n.visible && n.summary && n.stripCounts !== undefined })
+  }
+
+  function test_hovering_a_row_moves_the_one_selection() {
+    open(payload())
+    var rows = recentRows()
+    verify(rows.length >= 3, "expected at least 3 recent rows, got " + rows.length)
+    act.hover(rows[2], { until: function () { return panel.view.selectedIndex === 2 }, desc: "hovering row 2" })
+    var lit = recentRows().filter(function (r) { return r.selected === true })
+    compare(lit.length, 1)
+    compare(lit[0], rows[2])
+    // A cursor left over a row would select it in the next test's panel.
+    act.moveAway(panel.testContentItem)
+  }
+
+  function test_needs_you_shows_the_thing_then_a_label_and_details() {
+    open(payload(function (d) {
+      d.attention.push({ kind: "possibly-stale-handoff", project_key: "foo", reason: "foo: handoff possibly stale — cargo test failed (exit 101) after it", handoff_id: "h-foo", evidence_ids: ["7"] })
+    }))
+    verify(hasText("foo: handoff possibly stale"), "attention line missing: " + JSON.stringify(texts()))
+    verify(hasText("Command failed."), "detail label missing")
+    verify(hasText("Details"), "Details link missing")
+    compare(textContaining("cargo test failed"), "", "the raw detail belongs in the Details tooltip, not the panel")
+  }
+
   function test_k_and_arrows_move_and_clamp() {
     open(payload())
     press(Qt.Key_Down)
