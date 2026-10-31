@@ -162,6 +162,7 @@ TestCase {
     var view = TestUtil.findFirst(content, function (n) { return n.canPopOut !== undefined })
     verify(view !== null && view.canPopOut === true, "the popup's view offers no pop-out")
     verify(TestUtil.findFirst(content, function (n) { return n.tooltipText === "Pop out" }) !== null, "no pop-out button in the popup")
+    compare(TestUtil.findFirst(content, function (n) { return n.objectName === "pinButton" }), null, "the popup offers a pin")
     view.helpOpen = true
     view.popOutRequested()
     compare(widget.opened, false)

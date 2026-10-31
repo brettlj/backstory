@@ -189,7 +189,23 @@ function isWindowAddress(addr) {
 // for a Hyprland without the hl.dsp Lua dispatcher. The address is checked
 // by isWindowAddress before either is built.
 function focusWindowCommand(addr) {
-  return ["hyprctl", "dispatch", 'hl.dsp.focus({ window = "address:' + addr + '" })']
+  return ["hyprctl", "dispatch", focusWindowDispatch(addr)]
+}
+
+// pinWindowDispatch / moveWindowDispatch / focusWindowDispatch are Hyprland
+// dispatch requests (Hyprland.dispatch) for the window's own address,
+// checked by isWindowAddress first: pin or unpin it (pinned, it shows on
+// every workspace), move it to a workspace id, and focus it.
+function pinWindowDispatch(addr, on) {
+  return 'hl.dsp.window.pin({ action = "' + (on ? "on" : "off") + '", window = "address:' + addr + '" })'
+}
+
+function moveWindowDispatch(addr, workspaceId) {
+  return 'hl.dsp.window.move({ workspace = "' + Math.floor(workspaceId) + '", window = "address:' + addr + '" })'
+}
+
+function focusWindowDispatch(addr) {
+  return 'hl.dsp.focus({ window = "address:' + addr + '" })'
 }
 
 function focusWindowFallbackCommand(addr) {

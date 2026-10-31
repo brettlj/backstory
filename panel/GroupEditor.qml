@@ -54,10 +54,13 @@ Item {
 
   signal changed()
   signal closeRequested()
-  // Set where the view can pop out (the bar popup): the header then offers
-  // the pop-out button, as the main view's does.
+  // Where the view is shown: the bar popup sets canPopOut, the window
+  // canPin and pinned; the header then offers those buttons (HostButtons).
   property bool canPopOut: false
+  property bool canPin: false
+  property bool pinned: false
   signal popOutRequested()
+  signal pinRequested()
   // Asks the scroll view to show `target`, the row the keys moved to.
   signal reveal(Item target)
 
@@ -205,13 +208,12 @@ Item {
       status: header.groupCount + (header.groupCount === 1 ? " group · " : " groups · ")
         + header.projectCount + (header.projectCount === 1 ? " project this week" : " projects this week")
 
-      PanelActionButton {
-        visible: root.canPopOut
-        iconText: Glyphs.popOut()
-        tooltipText: "Pop out"
-        foreground: Commons.Color.popups.text
-        hoverColor: Commons.Color.accent
-        onClicked: root.popOutRequested()
+      HostButtons {
+        canPopOut: root.canPopOut
+        canPin: root.canPin
+        pinned: root.pinned
+        onPopOutRequested: root.popOutRequested()
+        onPinRequested: root.pinRequested()
       }
     }
 

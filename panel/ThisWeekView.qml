@@ -23,9 +23,14 @@ Item {
   property bool active: false
   signal closeRequested()
   // A host that can show the view somewhere roomier (the bar popup, which
-  // opens the window) sets canPopOut; the header then offers a pop-out button.
+  // opens the window) sets canPopOut; the window sets canPin and pinned
+  // (pinned, it follows you to every workspace). Every view's header then
+  // offers those buttons (HostButtons).
   property bool canPopOut: false
+  property bool canPin: false
+  property bool pinned: false
   signal popOutRequested()
+  signal pinRequested()
 
   property var weekData: null
   property bool loading: false
@@ -444,13 +449,12 @@ Item {
             statusShown: !root.waitingForFirstData
             statusUrgent: root.attentionItems.length > 0
 
-            PanelActionButton {
-              visible: root.canPopOut
-              iconText: Glyphs.popOut()
-              tooltipText: "Pop out"
-              foreground: Commons.Color.popups.text
-              hoverColor: Commons.Color.accent
-              onClicked: root.popOutRequested()
+            HostButtons {
+              canPopOut: root.canPopOut
+              canPin: root.canPin
+              pinned: root.pinned
+              onPopOutRequested: root.popOutRequested()
+              onPinRequested: root.pinRequested()
             }
 
             PanelActionButton {
@@ -559,7 +563,10 @@ Item {
           id: groupEditor
           width: parent.width
           canPopOut: root.canPopOut
+          canPin: root.canPin
+          pinned: root.pinned
           onPopOutRequested: root.popOutRequested()
+          onPinRequested: root.pinRequested()
           onReveal: (target) => root.revealInScroller(target)
           onCloseRequested: root.groupEditorOpen = false
           onChanged: root.refresh()
@@ -573,7 +580,10 @@ Item {
         HelpView {
           width: parent.width
           canPopOut: root.canPopOut
+          canPin: root.canPin
+          pinned: root.pinned
           onPopOutRequested: root.popOutRequested()
+          onPinRequested: root.pinRequested()
           onCloseRequested: root.helpOpen = false
         }
       }
@@ -589,7 +599,10 @@ Item {
           displayName: root.memoryDisplayName
           location: root.memoryLocation
           canPopOut: root.canPopOut
+          canPin: root.canPin
+          pinned: root.pinned
           onPopOutRequested: root.popOutRequested()
+          onPinRequested: root.pinRequested()
           onReveal: (target) => root.revealInScroller(target)
           onCloseRequested: root.memoryOpen = false
           onChanged: root.refresh()

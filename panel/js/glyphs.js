@@ -21,6 +21,8 @@ function edit() { return "\uf044" }         // nf-fa-pencil_square_o
 function trash() { return "\uf1f8" }        // nf-fa-trash
 function history() { return "\uf1da" }      // nf-fa-history
 function check() { return "\uf00c" }        // nf-fa-check
+function pin() { return String.fromCodePoint(0xF0403) }        // nf-md-pin
+function pinOutline() { return String.fromCodePoint(0xF0931) } // nf-md-pin_outline
 
 // One glyph per record kind the store defines (SCHEMA.md records.kind CHECK).
 var RECORD_KIND_GLYPHS = {

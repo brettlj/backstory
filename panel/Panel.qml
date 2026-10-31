@@ -1,9 +1,11 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import qs.Ui
 import qs.Commons
 import qs.Commons as Commons
+import "js/launchers.js" as Launchers
 
 // Backstory: a CLIENT-only panel, the floating window around ThisWeekView
 // (the HERE card, Needs you, and Recent). The host injects
@@ -19,6 +21,9 @@ Item {
   // the "panel" kind contract's own open()/close()/toggle() below, the
   // same functions IpcHandler answers).
   property bool opened: false
+  // Pinned, the window shows on every workspace (Hyprland's pin); it opens
+  // unpinned, on the workspace it opened on.
+  property bool pinned: false
 
   // The content, reachable by tests (a QML `id` is not reachable from
   // outside this file).
@@ -75,12 +80,38 @@ Item {
   // plain "{}" (CTRL+SHIFT+B, IPC) opens as it always has. Any process can
   // send a payload, so an oversized or unreadable one is ignored.
   function open(payloadJson) {
+    if (!root.opened) root.pinned = false
     root.opened = true
     var state = null
     if (typeof payloadJson === "string" && payloadJson.length <= 65536) {
       try { state = JSON.parse(payloadJson) } catch (e) { state = null }
     }
     if (state && typeof state === "object" && state.view !== undefined) view.restore(state)
+  }
+
+  // This window among Hyprland's: its title and Quickshell's app id, as the
+  // windowrule in ops/hyprland/backstory.lua matches it. null if not found.
+  function windowToplevel() {
+    var all = Hyprland.toplevels.values
+    for (var i = 0; i < all.length; i++) {
+      var t = all[i]
+      if (t.title === root.windowTitle && t.wayland && t.wayland.appId === "org.quickshell") return t
+    }
+    return null
+  }
+
+  // The window's Hyprland address as 0x<hex>, or "" when it is not one.
+  function windowAddress(toplevel) {
+    var a = toplevel ? String(toplevel.address || "") : ""
+    if (a.indexOf("0x") !== 0) a = "0x" + a
+    return Launchers.isWindowAddress(a) ? a : ""
+  }
+
+  function togglePin() {
+    var a = root.windowAddress(root.windowToplevel())
+    if (a === "") return
+    root.pinned = !root.pinned
+    Hyprland.dispatch(Launchers.pinWindowDispatch(a, root.pinned))
   }
 
   function close() {
@@ -158,6 +189,9 @@ Item {
         scale: root.zoom
         transformOrigin: Item.TopLeft
         active: root.opened
+        canPin: true
+        pinned: root.pinned
+        onPinRequested: root.togglePin()
         onCloseRequested: root.close()
       }
     }

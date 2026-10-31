@@ -2,8 +2,10 @@ import QtQuick
 import QtTest
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import "testutil.js" as TestUtil
 import "../../js/launchers.js" as Launchers
+import "../../js/glyphs.js" as Glyphs
 
 // The Panel.qml integration suite (task 4fe02e30 Part 1 harness): feeds
 // the plugin's real Process stub the committed this-week golden, `{}`, and
@@ -52,6 +54,7 @@ TestCase {
   function init() {
     ProcessController.reset()
     Quickshell.reset()
+    Hyprland.reset()
     loader = panelComponent.createObject(testCase)
     tryCompare(loader, "status", Loader.Ready, 2000)
     verify(loader.item !== null, "Panel.qml failed to load: status=" + loader.status)
@@ -144,6 +147,50 @@ TestCase {
       panel.view.showMain()
       panel.view[views[i]] = true
       act.clickWhenReady(popOutButton, { desc: "pop-out button in " + views[i], until: function () { return asked === i + 1 } })
+    }
+  }
+
+  // ---- Pin: the window follows you to every workspace ----
+  // The window as Hyprland lists it, next to a terminal with the same title.
+  function listWindow(activated, workspace) {
+    Hyprland.toplevels = { values: [
+      { address: "aa11", title: "backstory", activated: false, workspace: { id: 1 }, wayland: { appId: "com.mitchellh.ghostty" } },
+      { address: "bb22", title: "backstory", activated: activated, workspace: { id: workspace }, wayland: { appId: "org.quickshell" } }
+    ] }
+  }
+
+  function pinButton() {
+    return TestUtil.findFirst(panel.testContentItem, function (n) { return n.objectName === "pinButton" })
+  }
+
+  function test_pin_toggles_hyprlands_pin_on_this_window_and_shows_it() {
+    listWindow(true, 1)
+    openWith(readFixture(goldenUrl))
+    compare(pinButton().iconText, Glyphs.pinOutline(), "the window opened pinned")
+    act.clickWhenReady(pinButton, { desc: "pin button", until: function () { return panel.pinned } })
+    compare(Hyprland.dispatched, ['hl.dsp.window.pin({ action = "on", window = "address:0xbb22" })'])
+    compare(pinButton().iconText, Glyphs.pin())
+    act.clickWhenReady(pinButton, { desc: "pin button again", until: function () { return !panel.pinned } })
+    compare(Hyprland.dispatched[1], 'hl.dsp.window.pin({ action = "off", window = "address:0xbb22" })')
+  }
+
+  function test_the_window_opens_unpinned() {
+    listWindow(true, 1)
+    openWith(readFixture(goldenUrl))
+    panel.togglePin()
+    compare(panel.pinned, true)
+    panel.close()
+    panel.open("{}")
+    compare(panel.pinned, false)
+  }
+
+  function test_every_view_header_offers_the_pin() {
+    openWith(readFixture(goldenUrl))
+    var views = ["helpOpen", "groupEditorOpen", "memoryOpen"]
+    for (var i = 0; i < views.length; i++) {
+      panel.view.showMain()
+      panel.view[views[i]] = true
+      act.settled(function () { return TestUtil.slideDone(panel.testContentItem, ["helpPage", "groupsPage", "memoryPage"][i]) && pinButton() !== null }, "no pin button in " + views[i])
     }
   }
 
