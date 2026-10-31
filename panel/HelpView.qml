@@ -113,8 +113,9 @@ Item {
     PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
     HelpHeading { text: "MEMORY NAVIGATION" }
     HelpText {
-      text: "Select a row with j/k, then press m or click its Memory button. Click a record to expand "
-        + "it; Edit, Forget and the history toggle act on it."
+      text: "Select a row with j/k, then press m or click its Memory button. Click a record, or move "
+        + "to it with j/k and press \u2192, to expand it; \u2190 folds it. Edit, Forget and the "
+        + "history toggle act on it."
     }
 
     PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }

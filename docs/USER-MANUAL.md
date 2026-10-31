@@ -247,7 +247,7 @@ From top to bottom:
 | Help (lists the agent tools too) | | `?` |
 | Back to the main view from Memory, Groups or Help | back button | `u` |
 | Bigger / smaller / reset text (window only) | | `Ctrl` + `+` / `Ctrl` + `-` / `Ctrl` + `0` |
-| Open the window where you were (bar popup only) | pop-out button | |
+| Open the window where you were (bar popup only) | pop-out button | `p` |
 | Close | close button | `Esc` |
 
 The line at the bottom lists the keys for the view you're in.
@@ -258,7 +258,8 @@ Opens for one project and lists everything saved there, newest first. Each recor
 tier (**You**, **Agent** or **Inferred**), how old it is, and its first line. A mark appears
 if it's not current (for example possibly stale or superseded).
 
-- **Click a record** to read all of it.
+- **Click a record** to read all of it. Or move to it with `j` / `k`, then `→` expands it and
+  `←` folds it.
 - **Edit** opens it in a terminal editor. Saving writes a *new* corrected record that replaces
   the old one, marked as yours. The old one stays in history.
 - **Forget** (on one record) deletes it after you confirm.
@@ -273,8 +274,9 @@ if it's not current (for example possibly stale or superseded).
 Some projects are really one piece of work, like a website and its API in two folders. A
 **group** shows them as one row in RECENT, with the members underneath.
 
-- Click the **gear** icon, pick a project, then pick an existing group or type a new name, and
-  press **+**.
+- Click the **gear** icon, pick a project (or move to it with `j` / `k` and press `Enter`), then
+  pick an existing group or type a new name, and press **+**. The picked project has a check
+  mark.
 - Or use the command line: `backstory group set <group> --here` from inside the project.
 
 Most projects don't need a group.
