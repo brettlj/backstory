@@ -46,11 +46,15 @@ Item {
   property real nowMs: Date.now()
 
   // The content's natural height, padding included; the host sizes to it.
-  implicitHeight: contentColumn.implicitHeight + Style.spacing.panelPadding
+  implicitHeight: contentColumn.implicitHeight + root.edge
     + root.footerGap + footer.implicitHeight + root.footerBottomMargin
   // The key hints sit in a fixed footer under the scrolling content, in every view.
   readonly property real footerGap: Style.spacing.labelGap * 2
-  readonly property real footerBottomMargin: Style.space(12)
+  // The space between the content and the host's edge, and below the key
+  // hints. The window draws its own card; a host that pads its card itself
+  // (the bar popup's KeyboardPanel) sets both to 0.
+  property real edge: Style.spacing.panelPadding
+  property real footerBottomMargin: Style.space(12)
   readonly property Item scrollArea: scroller
 
   // Which group rows are expanded, keyed by group name. Collapsed by
@@ -302,9 +306,9 @@ Item {
     anchors.right: parent.right
     anchors.top: parent.top
     anchors.bottom: footer.top
-    anchors.leftMargin: Style.spacing.panelPadding
-    anchors.rightMargin: Style.spacing.panelPadding
-    anchors.topMargin: Style.spacing.panelPadding
+    anchors.leftMargin: root.edge
+    anchors.rightMargin: root.edge
+    anchors.topMargin: root.edge
     anchors.bottomMargin: root.footerGap
     contentWidth: width
     contentHeight: contentColumn.implicitHeight
@@ -466,8 +470,8 @@ Item {
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.bottom: parent.bottom
-    anchors.leftMargin: Style.spacing.panelPadding
-    anchors.rightMargin: Style.spacing.panelPadding
+    anchors.leftMargin: root.edge
+    anchors.rightMargin: root.edge
     anchors.bottomMargin: root.footerBottomMargin
     textFormat: Text.PlainText
     text: root.footerHint
