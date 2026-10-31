@@ -137,8 +137,8 @@ Item {
     PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
     HelpHeading { text: "GROUPS" }
     HelpText {
-      text: "A group folds related projects into one RECENT row; you set it, one per project. Click "
-        + "the gear for the group editor, or run `backstory group set <group> <project>`."
+      text: "A group folds related projects into one RECENT row; you set it, one per project. Press g "
+        + "or click the gear for the group editor, or run `backstory group set <group> <project>`."
     }
 
   }

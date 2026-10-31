@@ -112,7 +112,7 @@ Item {
   // Every view's footer ends with the keys the host adds: p where it can
   // pop out (the bar popup), and Esc.
   readonly property string closeHint: (root.canPopOut ? "p pop out \u00b7 " : "") + "Esc close"
-  readonly property string mainFooterHint: "j/k move \u00b7 \u2192 agents \u00b7 \u2190 fold \u00b7 Enter continue \u00b7 t terminal \u00b7 m memory \u00b7 ? help \u00b7 r refresh \u00b7 " + root.closeHint
+  readonly property string mainFooterHint: "j/k move \u00b7 \u2192 agents \u00b7 \u2190 fold \u00b7 Enter continue \u00b7 t terminal \u00b7 m memory \u00b7 g groups \u00b7 ? help \u00b7 r refresh \u00b7 " + root.closeHint
   readonly property string footerHint: root.helpOpen ? "j/k scroll \u00b7 u or ? back \u00b7 " + root.closeHint
     : root.memoryOpen ? "j/k move \u00b7 \u2192 expand \u00b7 \u2190 fold \u00b7 u back \u00b7 " + root.closeHint
     : root.groupEditorOpen ? "j/k move \u00b7 Enter pick \u00b7 u back \u00b7 " + root.closeHint : root.mainFooterHint
@@ -296,6 +296,7 @@ Item {
     case Qt.Key_Return: case Qt.Key_Enter: root.continueOn(s, root.selectedAgent); return true
     case Qt.Key_T: if (s) root.openTerminal(Model.summaryCwd(s)); return true
     case Qt.Key_M: if (s) root.summaryMemory(s); return true
+    case Qt.Key_G: root.groupEditorOpen = true; return true
     case Qt.Key_Question: root.helpOpen = true; return true
     case Qt.Key_R: root.refresh(); return true
     }

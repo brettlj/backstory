@@ -225,6 +225,13 @@ TestCase {
     compare(footerText(), "j/k move · Enter pick · u back · Esc close")
   }
 
+  function test_g_opens_groups_from_the_main_view() {
+    verify(panel.view.footerHint.indexOf("g groups") >= 0, "the main footer never listed g: " + panel.view.footerHint)
+    panel.testKeyItem.forceActiveFocus()
+    act.pressKey(Qt.Key_G)
+    act.settledEq(panel.view, "groupEditorOpen", true)
+  }
+
   function test_u_goes_back_to_the_main_view() {
     openGroupEditor()
     panel.testKeyItem.forceActiveFocus()
