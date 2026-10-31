@@ -91,8 +91,8 @@ TestCase {
   function openMemory(recordsText) {
     respondRecords(recordsText)
     panel.open("{}")
-    tryCompare(panel, "loading", false, 2000)
-    clickByTooltip("Memory", { until: function () { return panel.memoryOpen } })
+    tryCompare(panel.view, "loading", false, 2000)
+    clickByTooltip("Memory", { until: function () { return panel.view.memoryOpen } })
     act.launchedNext(isRecordsRun(false), "memory records run")
     act.quiescent(function () { return [texts(), panel.testImplicitHeight] }, "memory view never finished rendering")
   }
@@ -189,8 +189,8 @@ TestCase {
   function test_records_error_shows_stderr() {
     ProcessController.respond(Launchers.recordsCommand(projectKey, cwd, false), { stdout: "", stderr: "store is locked", exitCode: 1 })
     panel.open("{}")
-    tryCompare(panel, "loading", false, 2000)
-    clickByTooltip("Memory", { until: function () { return panel.memoryOpen } })
+    tryCompare(panel.view, "loading", false, 2000)
+    clickByTooltip("Memory", { until: function () { return panel.view.memoryOpen } })
     expectText("store is locked")
   }
 
@@ -326,8 +326,8 @@ TestCase {
     })
     ProcessController.respond(Launchers.recordsCommand(wsKey, labelCwd, false), { stdout: recordsText, stderr: "", exitCode: 0 })
     panel.open("{}")
-    tryCompare(panel, "loading", false, 2000)
-    clickByTooltip("Memory", { until: function () { return panel.memoryOpen } })
+    tryCompare(panel.view, "loading", false, 2000)
+    clickByTooltip("Memory", { until: function () { return panel.view.memoryOpen } })
     act.launchedNext(isRecordsRun2(wsKey, labelCwd), "label row records run")
     openedLabelRowMemoryReady()
     pinClock()
@@ -601,7 +601,7 @@ TestCase {
     panel = loader.item
     panel.testContentItem.parent = loader
     panel.open("{}")
-    tryCompare(panel, "loading", false, 2000)
+    tryCompare(panel.view, "loading", false, 2000)
     function groupHeader() { return allNodes(panel.testContentItem).filter(function (n) { return n.text === "Work (1)" }) }
     act.settled(function () { return groupHeader().length === 1 }, "no group section heading")
     var header = groupHeader()
@@ -616,7 +616,7 @@ TestCase {
         until: function () { return TestUtil.findFirst(panel.testContentItem, function (n) { return n.tooltipText === "Memory" }) !== null }
       })
     }
-    clickByTooltip("Memory", { until: function () { return panel.memoryOpen } })
+    clickByTooltip("Memory", { until: function () { return panel.view.memoryOpen } })
     var heading = byName("forgetHeading")
     compare(heading.font.pixelSize, wantSize)
     compare(heading.color, wantColor)

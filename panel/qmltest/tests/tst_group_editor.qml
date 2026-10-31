@@ -54,7 +54,7 @@ TestCase {
     panel.testContentItem.parent = loader
     panel.open("{}")
     act.launchedNext(function (r) { return ProcessController.keyFor(r.command) === ProcessController.keyFor(Launchers.thisWeekCommand()) }, "initial this-week fetch")
-    tryCompare(panel, "loading", false, 2000)
+    tryCompare(panel.view, "loading", false, 2000)
     act.drain()
   }
 
@@ -74,7 +74,7 @@ TestCase {
 
   function openGroupEditor() {
     clickByTooltip("Groups")
-    act.settled(function () { return panel.groupEditorOpen }, "group editor never opened")
+    act.settled(function () { return panel.view.groupEditorOpen }, "group editor never opened")
     // The editor fetches its group list on open; its rows exist once that lands.
     act.launchedNext(function (r) { return ProcessController.keyFor(r.command) === ProcessController.keyFor(Launchers.groupListCommand()) }, "group list fetch")
   }

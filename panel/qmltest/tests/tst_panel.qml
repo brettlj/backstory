@@ -76,7 +76,7 @@ TestCase {
   function openWith(payloadText) {
     ProcessController.respond(Launchers.thisWeekCommand(), { stdout: payloadText, stderr: "", exitCode: 0 })
     panel.open("{}")
-    tryCompare(panel, "loading", false, 2000)
+    tryCompare(panel.view, "loading", false, 2000)
     // Column/Row (QtQuick's positioners) recompute implicitWidth/Height
     // via a deferred polish pass, not synchronously on every child change
     // (a read right after a data change saw a stale pre-data height), so
@@ -100,7 +100,7 @@ TestCase {
 
     // Group children are drawn only while their group is expanded; a
     // workspace-keyed row's text is "<dir> · workspace notes".
-    panel.toggleGroup("widget-suite")
+    panel.view.toggleGroup("widget-suite")
     var rendered = []
     var missing = []
     function allRendered() {
@@ -140,15 +140,15 @@ TestCase {
     var affirmJson = JSON.stringify(Launchers.affirmCommand("h-wobble"))
     act.launchedNext(function (r) { return JSON.stringify(r.command) === affirmJson }, "affirm")
     compare(JSON.stringify(Launchers.affirmCommand("h-wobble")), JSON.stringify(["backstory", "affirm", "h-wobble"]))
-    tryCompare(panel, "loading", false, 2000)
-    compare(panel.attentionItems.length, 0)
+    tryCompare(panel.view, "loading", false, 2000)
+    compare(panel.view.attentionItems.length, 0)
   }
 
   function test_handles_empty_object_payload() {
     openWith("{}")
-    compare(panel.attentionItems.length, 0)
-    compare(panel.whereLeftOffRows.length, 0)
-    compare(panel.weekDays.length, 0)
+    compare(panel.view.attentionItems.length, 0)
+    compare(panel.view.whereLeftOffRows.length, 0)
+    compare(panel.view.weekDays.length, 0)
   }
 
   // A fresh panel (the shell unloads it on a bar or keybind close) has no
@@ -158,12 +158,12 @@ TestCase {
   // `data`, which on Qt 6.12 reads as Item's own `data` list, not null, so
   // "no data yet" must not be tested by `data === null`.
   function test_no_empty_state_while_first_load_runs() {
-    panel.loading = true
+    panel.view.loading = true
     var texts = TestUtil.collectVisibleTexts(panel.testContentItem)
     verify(texts.indexOf("Nothing this week.") < 0, "empty state shown while the first load runs: " + texts)
-    verify(texts.indexOf(panel.summaryText) < 0, "summary '" + panel.summaryText + "' shown while the first load runs")
+    verify(texts.indexOf(panel.view.summaryText) < 0, "summary '" + panel.view.summaryText + "' shown while the first load runs")
 
-    panel.loading = false
+    panel.view.loading = false
     texts = TestUtil.collectVisibleTexts(panel.testContentItem)
     verify(texts.indexOf("Nothing this week.") >= 0, "a first load that ends with no answer shows the empty state: " + texts)
 
@@ -171,16 +171,16 @@ TestCase {
     texts = TestUtil.collectVisibleTexts(panel.testContentItem)
     verify(texts.indexOf("Nothing this week.") >= 0, "an empty answer shows the empty state: " + texts)
 
-    panel.loading = true
+    panel.view.loading = true
     texts = TestUtil.collectVisibleTexts(panel.testContentItem)
-    verify(texts.indexOf(panel.summaryText) >= 0, "a later refresh hid the summary: " + texts)
+    verify(texts.indexOf(panel.view.summaryText) >= 0, "a later refresh hid the summary: " + texts)
   }
 
   function test_handles_all_empty_arrays_payload() {
     openWith(emptyArraysPayload)
-    compare(panel.attentionItems.length, 0)
-    compare(panel.whereLeftOffRows.length, 0)
-    compare(panel.weekDays.length, 0)
+    compare(panel.view.attentionItems.length, 0)
+    compare(panel.view.whereLeftOffRows.length, 0)
+    compare(panel.view.weekDays.length, 0)
   }
 
   function assertLayoutWithinBounds(label) {
@@ -205,7 +205,7 @@ TestCase {
 
   function test_layout_within_bounds_panel_open() {
     openWith(readFixture(goldenUrl))
-    compare(panel.groupEditorOpen, false)
+    compare(panel.view.groupEditorOpen, false)
     assertLayoutWithinBounds("panel open, group editor closed")
   }
 
@@ -217,8 +217,8 @@ TestCase {
   function test_layout_within_bounds_group_editor_open() {
     openWith(readFixture(goldenUrl))
     ProcessController.respond(Launchers.groupListCommand(), { stdout: JSON.stringify({ groups: [], ungrouped: [] }), stderr: "", exitCode: 0 })
-    panel.groupEditorOpen = true
-    act.settled(function () { return panel.groupEditorOpen }, "group editor never opened")
+    panel.view.groupEditorOpen = true
+    act.settled(function () { return panel.view.groupEditorOpen }, "group editor never opened")
     assertLayoutWithinBounds("group editor open")
   }
 

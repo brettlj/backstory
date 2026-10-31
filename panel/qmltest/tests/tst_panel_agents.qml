@@ -71,7 +71,7 @@ TestCase {
     ProcessController.respond(Launchers.thisWeekCommand(), { stdout: JSON.stringify(data), stderr: "", exitCode: 0 })
     ProcessController.respond(Launchers.defaultAgentCommand(), { stdout: "claude\n", stderr: "", exitCode: 0 })
     panel.open("{}")
-    tryCompare(panel, "loading", false, 2000)
+    tryCompare(panel.view, "loading", false, 2000)
     // Rows are built from the data on the next polish; wait for the first.
     act.settled(function () { return findFoo() !== null }, "foo row never rendered")
     act.drain()
@@ -107,7 +107,7 @@ TestCase {
     return findFoo()
   }
 
-  function selected(prop, value) { act.settledEq(panel, prop, value) }
+  function selected(prop, value) { act.settledEq(panel.view, prop, value) }
 
   function subRowCount(n) {
     act.settled(function () { return subRows().length === n }, "expected " + n + " sub rows, have " + subRows().length)
@@ -294,7 +294,7 @@ TestCase {
     act.clickWhenReady(function () {
       var b = continueButtons()
       if (b.length !== 3) return null
-      panel.revealInScroller(b[1])
+      panel.view.revealInScroller(b[1])
       return b[1]
     }, { desc: "second sub-row Continue" })
     var runs = act.launchedCount(isTermRun, 1, "sub-row Continue")

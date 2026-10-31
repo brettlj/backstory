@@ -58,7 +58,7 @@ TestCase {
     ProcessController.respond(Launchers.thisWeekCommand(), { stdout: JSON.stringify(data), stderr: "", exitCode: 0 })
     ProcessController.respond(Launchers.defaultAgentCommand(), { stdout: defaultAgent === undefined ? "claude\n" : defaultAgent, stderr: "", exitCode: 0 })
     panel.open("{}")
-    tryCompare(panel, "loading", false, 2000)
+    tryCompare(panel.view, "loading", false, 2000)
     act.quiescent(function () { return [texts(), panel.testImplicitHeight] }, "panel never finished rendering")
   }
 
@@ -415,24 +415,24 @@ TestCase {
       verify(top >= -1 && top + row.height <= scroller.height + 1,
              step + ": selected row spans " + top + ".." + (top + row.height) + ", view is 0.." + scroller.height)
     }
-    var last = panel.navRows.length - 1
+    var last = panel.view.navRows.length - 1
     for (var i = 1; i <= last; i++) {
       press(Qt.Key_J)
-      act.settledEq(panel, "selectedIndex", i)
+      act.settledEq(panel.view, "selectedIndex", i)
       checkInView("j to row " + i)
     }
     // Into the last row's agent sub-rows: expand it, then j through them.
     press(Qt.Key_Right)
-    tryVerify(function () { return panel.navRows.length > last + 1 }, 2000, "expanding the last row added no agent sub-rows")
-    for (var a = last + 1; a < panel.navRows.length; a++) {
+    tryVerify(function () { return panel.view.navRows.length > last + 1 }, 2000, "expanding the last row added no agent sub-rows")
+    for (var a = last + 1; a < panel.view.navRows.length; a++) {
       press(Qt.Key_J)
-      act.settledEq(panel, "selectedIndex", a)
+      act.settledEq(panel.view, "selectedIndex", a)
       checkInView("j to agent sub-row " + a)
     }
-    last = panel.navRows.length - 1
+    last = panel.view.navRows.length - 1
     for (var k = last - 1; k >= 0; k--) {
       press(Qt.Key_K)
-      act.settledEq(panel, "selectedIndex", k)
+      act.settledEq(panel.view, "selectedIndex", k)
       checkInView("k to row " + k)
     }
   }
@@ -442,25 +442,25 @@ TestCase {
   function test_up_on_first_row_scrolls_to_top() {
     open(longRecentPayload())
     var scroller = panel.testScroller
-    var last = panel.navRows.length - 1
+    var last = panel.view.navRows.length - 1
     for (var i = 1; i <= last; i++) press(Qt.Key_J)
-    act.settledEq(panel, "selectedIndex", last)
+    act.settledEq(panel.view, "selectedIndex", last)
     for (var k = last - 1; k >= 0; k--) press(Qt.Key_K)
-    act.settledEq(panel, "selectedIndex", 0)
+    act.settledEq(panel.view, "selectedIndex", 0)
     verify(scroller.contentY > 0, "first row already shows the top of the card (contentY " + scroller.contentY + "): fixture too short")
     press(Qt.Key_K)
     act.settledEq(scroller, "contentY", 0)
-    compare(panel.selectedIndex, 0)
+    compare(panel.view.selectedIndex, 0)
     press(Qt.Key_Up)
     act.settledEq(scroller, "contentY", 0)
-    compare(panel.selectedIndex, 0)
+    compare(panel.view.selectedIndex, 0)
   }
 
   function test_keys_select_continue_terminal_memory_and_close() {
     open(payload())
-    act.settledEq(panel, "selectedIndex", 0)
+    act.settledEq(panel.view, "selectedIndex", 0)
     press(Qt.Key_J)
-    act.settledEq(panel, "selectedIndex", 1)
+    act.settledEq(panel.view, "selectedIndex", 1)
     // row 2 is bar (cwd /home/brian/bar), codex, no handoff
     press(Qt.Key_Return)
     var a = act.launchedCount(isTermRun, 1, "Enter on bar")
@@ -474,13 +474,13 @@ TestCase {
     compare(last.workingDirectory, "/home/brian/bar")
 
     press(Qt.Key_M)
-    act.settledEq(panel, "memoryOpen", true)
-    act.settledEq(panel, "memoryProjectKey", "bar-key")
-    act.settledEq(panel, "memoryLocation", "/home/brian/bar")
+    act.settledEq(panel.view, "memoryOpen", true)
+    act.settledEq(panel.view, "memoryProjectKey", "bar-key")
+    act.settledEq(panel.view, "memoryLocation", "/home/brian/bar")
 
     press(Qt.Key_Escape)
     act.settledEq(panel, "opened", false)
-    act.settledEq(panel, "memoryOpen", false)
+    act.settledEq(panel.view, "memoryOpen", false)
   }
 
   function test_k_and_arrows_move_and_clamp() {
@@ -488,12 +488,12 @@ TestCase {
     press(Qt.Key_Down)
     press(Qt.Key_Down)
     press(Qt.Key_Down)
-    act.settledEq(panel, "selectedIndex", 2)
+    act.settledEq(panel.view, "selectedIndex", 2)
     press(Qt.Key_K)
-    act.settledEq(panel, "selectedIndex", 1)
+    act.settledEq(panel.view, "selectedIndex", 1)
     press(Qt.Key_Up)
     press(Qt.Key_Up)
-    act.settledEq(panel, "selectedIndex", 0)
+    act.settledEq(panel.view, "selectedIndex", 0)
   }
 
   function test_r_refreshes() {
@@ -507,8 +507,8 @@ TestCase {
 
   function test_row_keys_inert_while_memory_view_open() {
     open(payload())
-    panel.openMemory("foo-key", "projects/foo", "/home/brian/projects/foo")
-    act.settledEq(panel, "memoryOpen", true)
+    panel.view.openMemory("foo-key", "projects/foo", "/home/brian/projects/foo")
+    act.settledEq(panel.view, "memoryOpen", true)
     var before = Quickshell.execDetachedCalls.length
     press(Qt.Key_T)
     act.drain()
@@ -547,16 +547,16 @@ TestCase {
 
   function test_layout_memory_open() {
     open(payload())
-    panel.openMemory("foo-key", "projects/foo", "/home/brian/projects/foo")
-    act.settledEq(panel, "memoryOpen", true)
+    panel.view.openMemory("foo-key", "projects/foo", "/home/brian/projects/foo")
+    act.settledEq(panel.view, "memoryOpen", true)
     assertWithinBounds("memory open")
   }
 
   function test_layout_group_editor_open() {
     open(payload())
     ProcessController.respond(Launchers.groupListCommand(), { stdout: JSON.stringify({ groups: [], ungrouped: [] }), stderr: "", exitCode: 0 })
-    panel.groupEditorOpen = true
-    act.settledEq(panel, "groupEditorOpen", true)
+    panel.view.groupEditorOpen = true
+    act.settledEq(panel.view, "groupEditorOpen", true)
     assertWithinBounds("group editor open")
   }
 }

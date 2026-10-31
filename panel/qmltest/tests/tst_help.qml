@@ -56,7 +56,7 @@ TestCase {
     panel = loader.item
     panel.testContentItem.parent = loader
     panel.open("{}")
-    tryCompare(panel, "loading", false, 2000)
+    tryCompare(panel.view, "loading", false, 2000)
     act.settled(function () { return bodyVisible() }, "panel body never rendered")
   }
 
@@ -76,17 +76,17 @@ TestCase {
   function bodyVisible() { return texts().indexOf("RECENT") >= 0 }
 
   function test_question_opens_help_and_hides_body() {
-    compare(panel.helpOpen, false)
+    compare(panel.view.helpOpen, false)
     verify(bodyVisible())
     press(Qt.Key_Question)
-    act.settled(function () { return panel.helpOpen }, "help never opened")
+    act.settled(function () { return panel.view.helpOpen }, "help never opened")
     act.settled(function () { return !bodyVisible() }, "main body still visible with help open")
   }
 
   function test_navigation_keys_inert_while_help_open() {
     press(Qt.Key_Question)
-    act.settled(function () { return panel.helpOpen }, "help never opened")
-    var before = panel.selectedIndex
+    act.settled(function () { return panel.view.helpOpen }, "help never opened")
+    var before = panel.view.selectedIndex
     var execs = Quickshell.execDetachedCalls.length
     var runs = ProcessController.runs.length
     press(Qt.Key_J)
@@ -95,30 +95,30 @@ TestCase {
     press(Qt.Key_T)
     press(Qt.Key_M)
     act.drain()
-    compare(panel.selectedIndex, before)
+    compare(panel.view.selectedIndex, before)
     compare(Quickshell.execDetachedCalls.length, execs)
     compare(ProcessController.runs.length, runs)
-    compare(panel.memoryOpen, false)
-    compare(panel.helpOpen, true)
+    compare(panel.view.memoryOpen, false)
+    compare(panel.view.helpOpen, true)
   }
 
   function test_j_moves_selection_when_help_closed() {
-    compare(panel.selectedIndex, 0)
+    compare(panel.view.selectedIndex, 0)
     press(Qt.Key_J)
-    act.settled(function () { return panel.selectedIndex === 1 }, "J never moved the selection")
+    act.settled(function () { return panel.view.selectedIndex === 1 }, "J never moved the selection")
   }
 
   function test_escape_closes_panel_from_help() {
     press(Qt.Key_Question)
     press(Qt.Key_Escape)
-    act.settled(function () { return panel.opened === false && panel.helpOpen === false }, "Escape never closed the panel from help")
+    act.settled(function () { return panel.opened === false && panel.view.helpOpen === false }, "Escape never closed the panel from help")
   }
 
   function test_question_again_returns_to_body() {
     press(Qt.Key_Question)
-    act.settled(function () { return panel.helpOpen }, "help never opened")
+    act.settled(function () { return panel.view.helpOpen }, "help never opened")
     press(Qt.Key_Question)
-    act.settled(function () { return !panel.helpOpen && bodyVisible() }, "second ? never returned to the body")
+    act.settled(function () { return !panel.view.helpOpen && bodyVisible() }, "second ? never returned to the body")
   }
 
   function test_help_renders_fixture_tools_and_sections() {
@@ -140,7 +140,7 @@ TestCase {
   }
 
   function test_footer_hint_lists_help() {
-    verify(panel.footerHint.indexOf("? help") >= 0)
+    verify(panel.view.footerHint.indexOf("? help") >= 0)
     verify(texts().filter(function (t) { return t.indexOf("? help") >= 0 }).length >= 1)
   }
 
@@ -150,14 +150,14 @@ TestCase {
     act.settled(function () {
       bad = TestUtil.collectOutOfBounds(panel.testContentItem, panel.testContentItem,
         panel.testImplicitWidth, panel.testImplicitHeight)
-      return panel.helpOpen && bad.length === 0
+      return panel.view.helpOpen && bad.length === 0
     }, "item(s) out of bounds with help open: " + JSON.stringify(bad).slice(0, 2000))
   }
 
   function test_close_resets_help() {
     press(Qt.Key_Question)
-    act.settled(function () { return panel.helpOpen }, "help never opened")
+    act.settled(function () { return panel.view.helpOpen }, "help never opened")
     panel.close()
-    act.settled(function () { return !panel.helpOpen }, "close never reset help")
+    act.settled(function () { return !panel.view.helpOpen }, "close never reset help")
   }
 }

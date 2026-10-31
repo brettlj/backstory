@@ -30,6 +30,7 @@ TestCase {
     "MemoryView.qml",
     "Panel.qml",
     "ProjectRow.qml",
+    "ThisWeekView.qml",
     "WhereLeftOffSection.qml"
   ]
 
