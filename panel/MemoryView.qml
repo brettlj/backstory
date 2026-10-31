@@ -33,9 +33,8 @@ Item {
   property bool pinned: false
   signal popOutRequested()
   signal pinRequested()
-  // Asks the scroll view to show `target` (the confirm, note or error a
-  // click just produced), so nobody scrolls to find the result of a click.
-  signal reveal(Item target)
+  // The scrolling part under the header (ScrollPage), for the host and tests.
+  readonly property alias flickable: page.flickable
 
   property var payload: ({})
   property bool showHistory: false
@@ -85,6 +84,7 @@ Item {
       } else if (root.projectKey !== root.shownProjectKey) {
         root.expandedIds = {}
         root.cursorIndex = 0
+        page.scrollToTop()
       }
       root.shownProjectKey = root.projectKey
       root.errorText = ""
@@ -116,10 +116,10 @@ Item {
 
   function moveCursor(delta) {
     if (root.records.length === 0) return
-    if (delta < 0 && root.cursorIndex === 0) { root.reveal(header); return }
+    if (delta < 0 && root.cursorIndex === 0) { page.scrollToTop(); return }
     root.cursorIndex = Math.max(0, Math.min(root.records.length - 1, root.cursorIndex + delta))
     var rec = recordRepeater.itemAt(root.cursorIndex)
-    if (rec) root.reveal(rec)
+    if (rec) page.reveal(rec)
   }
 
   function toggleExpanded(recordId) {
@@ -174,7 +174,7 @@ Item {
       for (var p = target; p; p = p.parent) {
         if (typeof p.forceLayout === "function") p.forceLayout()
       }
-      root.reveal(target)
+      page.reveal(target)
     }
   }
 
@@ -292,14 +292,15 @@ Item {
   }
 
   implicitWidth: Style.space(360)
-  implicitHeight: content.implicitHeight
+  implicitHeight: page.implicitHeight
 
-  Column {
-    id: content
-    width: parent.width
+  // The header and the rule under it stay put; the records and Forget scroll.
+  ScrollPage {
+    id: page
+    anchors.fill: parent
     spacing: Style.spacing.rowGap
 
-    HeroHeader {
+    header: [HeroHeader {
       id: header
       showBack: true
       title: root.displayName
@@ -321,9 +322,9 @@ Item {
         hoverColor: Commons.Color.accent
         onClicked: root.toggleHistory()
       }
-    }
+    },
 
-    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
+    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }]
 
     Text {
       id: errorLabel
@@ -365,7 +366,7 @@ Item {
         readonly property bool expanded: !!root.expandedIds[rec.rid]
         readonly property bool current: rec.index === root.cursorIndex
 
-        width: content.width
+        width: page.width
         height: recColumn.implicitHeight + Style.spacing.rowGap
 
         // Drawn like the main view's selected row (ProjectRow.qml).

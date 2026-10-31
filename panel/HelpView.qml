@@ -28,7 +28,12 @@ Item {
   property var tools: []
   property string errorText: ""
 
-  implicitHeight: content.implicitHeight
+  implicitHeight: page.implicitHeight
+  // The scrolling part under the header (ScrollPage), for the host and tests.
+  readonly property alias flickable: page.flickable
+
+  // Help is text, not a list: j/k scroll it.
+  function scrollBy(dy) { page.scrollBy(dy) }
 
   function refresh() {
     toolsProcess.running = false
@@ -58,11 +63,11 @@ Item {
 
   component HelpHeading: PanelSectionHeader {
     foreground: Commons.Color.foreground
-    width: content.width
+    width: page.width
   }
 
   component HelpText: Text {
-    width: content.width
+    width: page.width
     textFormat: Text.PlainText
     font.family: Style.font.family
     font.pixelSize: Style.font.bodySmall
@@ -70,12 +75,13 @@ Item {
     wrapMode: Text.WordWrap
   }
 
-  Column {
-    id: content
-    width: parent.width
+  // The header and the rule under it stay put; the rest scrolls.
+  ScrollPage {
+    id: page
+    anchors.fill: parent
     spacing: Style.spacing.panelGap
 
-    HeroHeader {
+    header: [HeroHeader {
       showBack: true
       title: "Help"
       status: "Keys, agent tools and groups"
@@ -88,9 +94,10 @@ Item {
         onPopOutRequested: root.popOutRequested()
         onPinRequested: root.pinRequested()
       }
-    }
+    },
 
-    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
+    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }]
+
     HelpHeading { text: "AGENT TOOLS" }
 
     HelpText {
@@ -103,7 +110,7 @@ Item {
 
       delegate: Column {
         required property var modelData
-        width: content.width
+        width: page.width
         spacing: Style.spacing.labelGap / 2
 
         Text {

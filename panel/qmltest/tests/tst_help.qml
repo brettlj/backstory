@@ -142,8 +142,12 @@ TestCase {
     act.settled(function () { return texts().indexOf("GROUPS") >= 0 }, "help never rendered")
     var area = panel.view.scrollArea
     act.settled(function () { return area.contentHeight > area.height }, "help never grew taller than its view")
+    function y(item) { return item.mapToItem(panel.testContentItem, 0, 0).y }
+    var title = TestUtil.findFirst(panel.testContentItem, function (n) { return n.text === "Help" })
+    var titleY = y(title)
     press(Qt.Key_J)
     act.settled(function () { return area.contentY > 0 }, "j never scrolled down")
+    verify(Math.abs(y(title) - titleY) < 0.5, "the header scrolled with the text: " + titleY + " -> " + y(title))
     press(Qt.Key_K)
     act.settledEq(area, "contentY", 0)
   }

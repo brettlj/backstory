@@ -3,6 +3,7 @@ import QtTest
 import Quickshell
 import Quickshell.Io
 import "testutil.js" as TestUtil
+import "../../js/scroll.js" as Scroll
 import "../../js/launchers.js" as Launchers
 import "../../js/format.js" as Format
 
@@ -294,7 +295,7 @@ TestCase {
     act.clickWhenReady(function () {
       var b = continueButtons()
       if (b.length !== 3) return null
-      panel.view.revealInScroller(b[1])
+      Scroll.reveal(panel.view.scrollArea, b[1])
       return b[1]
     }, { desc: "second sub-row Continue" })
     var runs = act.launchedCount(isTermRun, 1, "sub-row Continue")

@@ -17,8 +17,11 @@ Item {
     NumberAnimation { duration: Style.duration(200); easing.type: Easing.OutCubic }
   }
 
+  // Fills the space the pages share; the view in it is as tall as the page,
+  // and its own height unscrolled is the page's implicitHeight.
   width: parent ? parent.width : 0
-  implicitHeight: childrenRect.height
+  height: parent ? parent.height : 0
+  implicitHeight: children.length > 0 ? children[0].implicitHeight : 0
   x: page.offset * page.width
   visible: Math.abs(page.offset) < 1
 }

@@ -508,6 +508,22 @@ TestCase {
     }
   }
 
+  // The header stays put; HERE, Needs you and Recent scroll under it.
+  function test_header_stays_put_while_here_and_the_lists_scroll() {
+    open(longRecentPayload())
+    function y(item) { return item.mapToItem(panel.testContentItem, 0, 0).y }
+    var title = TestUtil.findFirst(panel.testContentItem, function (n) { return n.text === "Backstory" })
+    var here = TestUtil.findFirst(panel.testContentItem, function (n) { return n.objectName === "hereCard" })
+    verify(title !== null && here !== null, "no header title or HERE card")
+    var titleY = y(title), hereY = y(here)
+    var scroller = panel.testScroller
+    scroller.contentY = Math.min(200, scroller.contentHeight - scroller.height)
+    verify(scroller.contentY > 100, "fixture too short to scroll")
+    act.quiescent(function () { return [scroller.contentY, y(title), y(here)] }, "never stopped scrolling")
+    verify(Math.abs(y(title) - titleY) < 0.5, "the header scrolled: " + titleY + " -> " + y(title))
+    verify(y(here) < hereY - 100, "the HERE card did not scroll")
+  }
+
   // Back on the first Recent row, up (k or the arrow) scrolls the whole card
   // to the top, so the HERE card and Needs you are in view again.
   function test_up_on_first_row_scrolls_to_top() {

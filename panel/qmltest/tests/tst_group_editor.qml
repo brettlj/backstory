@@ -225,6 +225,28 @@ TestCase {
     compare(footerText(), "j/k move · Enter pick · u back · Esc close")
   }
 
+  function test_header_and_rule_stay_put_while_the_projects_scroll() {
+    var projects = []
+    for (var i = 0; i < 40; i++) projects.push({ key: "p" + i, display_name: "project-" + i, group: "" })
+    ProcessController.respond(Launchers.groupListCommand(), {
+      stdout: JSON.stringify({ groups: [], ungrouped: projects.map(function (p) { return p.key }), projects: projects }), stderr: "", exitCode: 0
+    })
+    openGroupEditor()
+    findGroupEditor().refresh()
+    act.settled(function () { return findRow("p39") !== null }, "rows never rendered")
+    function y(item) { return item.mapToItem(panel.testContentItem, 0, 0).y }
+    act.quiescent(function () { return [y(findRow("p0")), y(findRow("p39")), panel.view.scrollArea.contentHeight] }, "rows never stopped moving")
+    var title = TestUtil.findFirst(panel.testContentItem, function (n) { return n.text === "Groups" })
+    var rule = visibleRules()[0]
+    var titleY = y(title), ruleY = y(rule), firstY = y(findRow("p0"))
+    var f = panel.view.scrollArea
+    f.contentY = f.contentHeight - f.height
+    act.quiescent(function () { return [f.contentY, y(title), y(findRow("p0"))] }, "never stopped scrolling")
+    verify(Math.abs(y(title) - titleY) < 0.5, "the header scrolled: " + titleY + " -> " + y(title))
+    verify(Math.abs(y(rule) - ruleY) < 0.5, "the rule under the header scrolled: " + ruleY + " -> " + y(rule))
+    verify(y(findRow("p0")) < firstY - 100, "the projects did not scroll")
+  }
+
   function test_g_opens_groups_from_the_main_view() {
     verify(panel.view.footerHint.indexOf("g groups") >= 0, "the main footer never listed g: " + panel.view.footerHint)
     panel.testKeyItem.forceActiveFocus()

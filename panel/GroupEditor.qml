@@ -61,8 +61,10 @@ Item {
   property bool pinned: false
   signal popOutRequested()
   signal pinRequested()
-  // Asks the scroll view to show `target`, the row the keys moved to.
-  signal reveal(Item target)
+  // The scrolling part under the header (ScrollPage), for the host and tests.
+  readonly property alias flickable: page.flickable
+  readonly property bool hasGroups: (root.groupsData.groups || []).length > 0
+  readonly property bool hasUngrouped: Groups.ungroupedProjects(root.groupsData.projects || []).length > 0
 
   property var groupsData: ({ groups: [], ungrouped: [], projects: [] })
   property string selectedProjectKey: ""
@@ -116,10 +118,10 @@ Item {
   function moveCursor(delta) {
     var i = root.rowKeys.indexOf(root.cursorKey)
     if (i < 0) return
-    if (delta < 0 && i === 0) { root.reveal(header); return }
+    if (delta < 0 && i === 0) { page.scrollToTop(); return }
     root.cursorKey = root.rowKeys[Math.max(0, Math.min(root.rowKeys.length - 1, i + delta))]
-    var row = root.rowFor(root.cursorKey, content)
-    if (row) root.reveal(row)
+    var row = root.rowFor(root.cursorKey, page)
+    if (row) page.reveal(row)
   }
 
   function rowFor(projectKey, item) {
@@ -184,7 +186,7 @@ Item {
   Component.onCompleted: root.refresh()
 
   implicitWidth: Style.space(360)
-  implicitHeight: content.implicitHeight + Style.spacing.panelPadding * 2
+  implicitHeight: page.implicitHeight + Style.spacing.panelPadding * 2
 
   Rectangle {
     anchors.fill: parent
@@ -192,13 +194,17 @@ Item {
     color: Commons.Color.popups.background
   }
 
-  Column {
-    id: content
+  // The header and the rule under it stay put; the groups, the ungrouped
+  // projects and the form scroll. The rule under the header is the first
+  // group's (or the ungrouped list's, or the form's), so each later section
+  // draws its own.
+  ScrollPage {
+    id: page
     anchors.fill: parent
     anchors.margins: Style.spacing.panelPadding
     spacing: Style.spacing.rowGap
 
-    HeroHeader {
+    header: [HeroHeader {
       id: header
       readonly property int groupCount: (root.groupsData.groups || []).length
       readonly property int projectCount: (root.groupsData.projects || []).length
@@ -215,17 +221,20 @@ Item {
         onPopOutRequested: root.popOutRequested()
         onPinRequested: root.pinRequested()
       }
-    }
+    },
+
+    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }]
 
     Repeater {
       model: root.groupsData.groups || []
 
       delegate: Column {
         required property var modelData
-        width: content.width
+        required property int index
+        width: page.width
         spacing: Style.spacing.labelGap / 2
 
-        PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
+        PanelSeparator { visible: index > 0; width: parent.width; foreground: Commons.Color.popups.text }
 
         Text {
           textFormat: Text.PlainText
@@ -240,7 +249,7 @@ Item {
           model: Groups.projectsInGroup(root.groupsData.projects || [], modelData.group)
           delegate: GroupProjectRow {
             required property var modelData
-            width: content.width
+            width: page.width
             projectKey: modelData.key
             displayName: modelData.display_name
             selected: root.isPicked(modelData.key)
@@ -257,7 +266,7 @@ Item {
 
     PanelSeparator {
       width: parent.width
-      visible: Groups.ungroupedProjects(root.groupsData.projects || []).length > 0
+      visible: root.hasGroups && root.hasUngrouped
       foreground: Commons.Color.popups.text
     }
 
@@ -275,7 +284,7 @@ Item {
       model: Groups.ungroupedProjects(root.groupsData.projects || [])
       delegate: GroupProjectRow {
         required property var modelData
-        width: content.width
+        width: page.width
         projectKey: modelData.key
         displayName: modelData.display_name
         selected: root.isPicked(modelData.key)
@@ -286,7 +295,11 @@ Item {
       }
     }
 
-    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
+    PanelSeparator {
+      width: parent.width
+      visible: root.hasGroups || root.hasUngrouped
+      foreground: Commons.Color.popups.text
+    }
 
     Flow {
       width: parent.width

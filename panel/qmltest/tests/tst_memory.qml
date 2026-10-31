@@ -459,6 +459,7 @@ TestCase {
     tryCompare(panel.view, "loading", false, 2000)
     clickByTooltip("Memory", { until: function () { return panel.view.memoryOpen } })
     act.launchedNext(isRecordsRun2(wsKey, labelCwd), "label row records run")
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") }, "the slide into Memory never finished")
     openedLabelRowMemoryReady()
     pinClock()
   }
@@ -581,6 +582,23 @@ TestCase {
     return TestUtil.findFirst(panel.testContentItem, function (n) {
       return typeof n.text === "string" && n.text.indexOf(prefix) === 0
     })
+  }
+
+  // The header and the rule under it stay put while the records scroll.
+  function test_header_and_rule_stay_put_while_the_records_scroll() {
+    openLabelRowMemory(longPayload())
+    function y(item) { return item.mapToItem(panel.testContentItem, 0, 0).y }
+    var title = TestUtil.findFirst(panel.testContentItem, function (n) { return n.text === "projects/backstory-feedback" })
+    var rule = visibleRules()[0]
+    var first = recordItem("bbbb0000-0000-4000-8000-000000000000")
+    var titleY = y(title), ruleY = y(rule), firstY = y(first)
+    var f = flickable()
+    f.contentY = f.contentHeight - f.height
+    settle()
+    verify(Math.abs(y(title) - titleY) < 0.5, "the header scrolled: " + titleY + " -> " + y(title))
+    verify(Math.abs(y(rule) - ruleY) < 0.5, "the rule under the header scrolled: " + ruleY + " -> " + y(rule))
+    verify(y(first) < firstY - 100, "the records did not scroll")
+    verify(rule.visible && title.visible)
   }
 
   function test_forget_confirm_is_scrolled_into_view() {
