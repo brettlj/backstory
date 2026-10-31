@@ -66,6 +66,7 @@ Item {
   // bounds walker (task 4fe02e30 DONE WHEN clause 3) uses these.
   readonly property Item testContentItem: panel.contentItem
   readonly property var testWindow: panel
+  readonly property var testGlow: glow
   readonly property Item testKeyItem: card
   readonly property Item testScroller: view.scrollArea
   readonly property real testImplicitWidth: panel.implicitWidth
@@ -183,6 +184,8 @@ Item {
       handle.shown = true
       Hyprland.dispatch(Launchers.resizeWindowDispatch(a, rest.w, rest.h))
       Hyprland.dispatch(Launchers.moveWindowToDispatch(a, rest.x, rest.y))
+      var f = root.popFrom
+      glow.play(Qt.rect(f.x - f.monX, f.y - f.monY, f.w, f.h), Qt.rect(rest.x - f.monX, rest.y - f.monY, rest.w, rest.h))
       popAnimDone.start()
     }
   }
@@ -248,6 +251,9 @@ Item {
     if (elsewhere && !root.pinned) Hyprland.dispatch(Launchers.moveWindowDispatch(a, ws.id))
     Hyprland.dispatch(Launchers.focusWindowDispatch(a))
   }
+
+  // Flashes around the window as it moves to rest after a pop-out.
+  PopOutGlow { id: glow }
 
   IpcHandler {
     target: "backstory.this-week"

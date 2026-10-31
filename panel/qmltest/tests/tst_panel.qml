@@ -264,6 +264,25 @@ TestCase {
     compare(handleBar(), null, "the grab handle stayed after the window closed")
   }
 
+  // The glow flashes around the window as it moves: it brightens fully,
+  // ends around the window at rest, then fades and the overlay goes.
+  function test_glow_flashes_and_travels_with_the_window() {
+    listWindow(true, 1)
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    var glow = panel.testGlow
+    var brightest = 0
+    var wasShown = false
+    glow.box.opacityChanged.connect(function () { brightest = Math.max(brightest, glow.box.opacity) })
+    glow.shownChanged.connect(function () { if (glow.shown) wasShown = true })
+    panel.open(popOutPayload(popFrom))
+    act.settled(function () { return wasShown && !glow.shown }, "the glow never played and went")
+    verify(brightest > 0.99, "the glow never brightened fully: " + brightest)
+    compare(glow.box.opacity, 0)
+    var rest = Popout.restRect(Popout.fromRect(popFrom), panel.popOutGrow)
+    compare([glow.box.x, glow.box.y, glow.box.width, glow.box.height],
+            [rest.x - glow.pad, rest.y - glow.pad, rest.w + glow.pad * 2, rest.h + glow.pad * 2])
+  }
+
   function test_a_bad_from_opens_the_window_as_usual() {
     listWindow(true, 1)
     ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
