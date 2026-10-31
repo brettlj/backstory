@@ -162,6 +162,8 @@ Item {
         width: content.width
         spacing: Style.spacing.labelGap / 2
 
+        PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
+
         Text {
           textFormat: Text.PlainText
           text: modelData.group
@@ -188,6 +190,12 @@ Item {
       }
     }
 
+    PanelSeparator {
+      width: parent.width
+      visible: Groups.ungroupedProjects(root.groupsData.projects || []).length > 0
+      foreground: Commons.Color.popups.text
+    }
+
     Text {
       visible: Groups.ungroupedProjects(root.groupsData.projects || []).length > 0
       textFormat: Text.PlainText
@@ -210,6 +218,8 @@ Item {
         onPicked: root.pickProject(modelData.key)
       }
     }
+
+    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
 
     Flow {
       width: parent.width

@@ -82,6 +82,7 @@ Item {
       }
     }
 
+    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
     HelpHeading { text: "AGENT TOOLS" }
 
     HelpText {
@@ -109,12 +110,14 @@ Item {
       }
     }
 
+    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
     HelpHeading { text: "MEMORY NAVIGATION" }
     HelpText {
       text: "Select a row with j/k, then press m or click its Memory button. Click a record to expand "
         + "it; Edit, Forget and the history toggle act on it."
     }
 
+    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
     HelpHeading { text: "HOW TO USE" }
     HelpText {
       text: "The top card is the project you are in. Each row's chips are the agents used there, "
@@ -123,6 +126,7 @@ Item {
         + "Enter on a row continues it, t opens a terminal there, r refreshes."
     }
 
+    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
     HelpHeading { text: "GROUPS" }
     HelpText {
       text: "A group folds related projects into one RECENT row; you set it, one per project. Click "

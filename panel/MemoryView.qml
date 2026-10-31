@@ -242,6 +242,8 @@ Item {
       }
     }
 
+    PanelSeparator { width: parent.width; foreground: Commons.Color.popups.text }
+
     Text {
       id: errorLabel
       visible: root.errorText !== ""
@@ -424,11 +426,10 @@ Item {
       }
     }
 
-    Rectangle {
+    PanelSeparator {
       objectName: "forgetDivider"
       width: parent.width
-      height: 1
-      color: Qt.darker(Commons.Color.foreground, 2.5)
+      foreground: Commons.Color.popups.text
     }
 
     Column {

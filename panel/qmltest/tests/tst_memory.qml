@@ -309,6 +309,17 @@ TestCase {
     expectNoOutOfBounds("delete confirm open")
   }
 
+  function visibleRules() {
+    return TestUtil.findAll(panel.testContentItem, function (n) { return n.visible && n.strength !== undefined })
+  }
+
+  function test_rules_under_the_header_and_above_forget() {
+    openMemory(readFixture(recordsGolden))
+    var rules = visibleRules()
+    compare(rules.length, 2)
+    compare(rules[1].objectName, "forgetDivider")
+  }
+
   // ---- The header: a hero row naming the project and its record count ----
   function test_header_names_the_project_and_counts_saved_records() {
     var golden = JSON.parse(readFixture(recordsGolden))

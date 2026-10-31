@@ -126,6 +126,24 @@ TestCase {
     compare(heroStatusText(), text)
   }
 
+  function visibleRules() {
+    return TestUtil.findAll(panel.testContentItem, function (n) { return n.visible && n.strength !== undefined })
+  }
+
+  function test_a_rule_before_each_group_the_ungrouped_list_and_the_form() {
+    ProcessController.respond(Launchers.groupListCommand(), {
+      stdout: JSON.stringify({
+        groups: [{ group: "tools" }],
+        ungrouped: ["b"],
+        projects: [{ key: "a", display_name: "a", group: "tools" }, { key: "b", display_name: "b", group: "" }]
+      }), stderr: "", exitCode: 0
+    })
+    openGroupEditor()
+    findGroupEditor().refresh()
+    act.settled(function () { return findRow("b") !== null }, "ungrouped row never rendered")
+    compare(visibleRules().length, 3)
+  }
+
   function test_header_counts_groups_and_projects() {
     openGroupEditor()
     expectHeroStatus("0 groups · 1 project this week")

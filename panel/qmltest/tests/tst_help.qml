@@ -122,6 +122,16 @@ TestCase {
     act.settled(function () { return !panel.view.helpOpen && bodyVisible() }, "second ? never returned to the body")
   }
 
+  function visibleRules() {
+    return TestUtil.findAll(panel.testContentItem, function (n) { return n.visible && n.strength !== undefined })
+  }
+
+  function test_a_rule_before_each_section() {
+    press(Qt.Key_Question)
+    act.settled(function () { return texts().indexOf("GROUPS") >= 0 }, "help never rendered")
+    compare(visibleRules().length, 4)
+  }
+
   function test_help_header_is_a_hero_row() {
     press(Qt.Key_Question)
     act.settled(function () { return texts().indexOf("Help") >= 0 }, "help header never rendered")
