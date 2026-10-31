@@ -1,5 +1,8 @@
 # Backstory
 
+[![CI](https://github.com/RidgetopAi/backstory/actions/workflows/ci.yml/badge.svg)](https://github.com/RidgetopAi/backstory/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/RidgetopAi/backstory/badge)](https://scorecard.dev/viewer/?uri=github.com/RidgetopAi/backstory)
+
 **Memory for your AI coding agents, on [Omarchy](https://omarchy.org).**
 
 Start a new Claude Code, Codex, Hermes or Pi session and the agent already knows what happened
