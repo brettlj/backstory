@@ -22,6 +22,10 @@ Item {
   // turning off returns to the main body.
   property bool active: false
   signal closeRequested()
+  // A host that can show the view somewhere roomier (the bar popup, which
+  // opens the window) sets canPopOut; the header then offers a pop-out button.
+  property bool canPopOut: false
+  signal popOutRequested()
 
   property var weekData: null
   property bool loading: false
@@ -338,6 +342,15 @@ Item {
           status: root.heroStatus
           statusShown: !root.waitingForFirstData
           statusUrgent: root.attentionItems.length > 0
+
+          PanelActionButton {
+            visible: root.canPopOut
+            iconText: Glyphs.popOut()
+            tooltipText: "Pop out"
+            foreground: Commons.Color.popups.text
+            hoverColor: Commons.Color.accent
+            onClicked: root.popOutRequested()
+          }
 
           PanelActionButton {
             id: groupsButton

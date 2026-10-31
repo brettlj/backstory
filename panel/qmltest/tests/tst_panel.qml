@@ -84,6 +84,23 @@ TestCase {
     act.quiescent(function () { return [TestUtil.collectVisibleTexts(panel.testContentItem), panel.testImplicitHeight] }, "panel never finished rendering")
   }
 
+  function popOutButton() {
+    return TestUtil.findFirst(panel.testContentItem, function (n) { return n.tooltipText === "Pop out" })
+  }
+
+  function test_window_offers_no_pop_out() {
+    openWith(readFixture(goldenUrl))
+    compare(popOutButton(), null)
+  }
+
+  function test_pop_out_button_asks_the_host() {
+    panel.view.canPopOut = true
+    openWith(readFixture(goldenUrl))
+    var asked = 0
+    panel.view.popOutRequested.connect(function () { asked++ })
+    act.clickWhenReady(popOutButton, { desc: "pop-out button", until: function () { return asked === 1 } })
+  }
+
   function test_renders_golden_display_names() {
     openWith(readFixture(goldenUrl))
     var golden = JSON.parse(readFixture(goldenUrl))
