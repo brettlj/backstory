@@ -134,7 +134,18 @@ TestCase {
   function test_footer_lists_helps_keys() {
     press(Qt.Key_Question)
     act.settledEq(panel.view, "helpOpen", true)
-    act.settled(function () { return footerText() === "u or ? back · Esc close" }, "footer never listed Help's keys; got " + footerText())
+    act.settled(function () { return footerText() === "j/k scroll · u or ? back · Esc close" }, "footer never listed Help's keys; got " + footerText())
+  }
+
+  function test_j_and_k_scroll_help() {
+    press(Qt.Key_Question)
+    act.settled(function () { return texts().indexOf("GROUPS") >= 0 }, "help never rendered")
+    var area = panel.view.scrollArea
+    act.settled(function () { return area.contentHeight > area.height }, "help never grew taller than its view")
+    press(Qt.Key_J)
+    act.settled(function () { return area.contentY > 0 }, "j never scrolled down")
+    press(Qt.Key_K)
+    act.settledEq(area, "contentY", 0)
   }
 
   function test_u_goes_back_to_the_main_view() {

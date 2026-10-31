@@ -113,7 +113,7 @@ Item {
   // pop out (the bar popup), and Esc.
   readonly property string closeHint: (root.canPopOut ? "p pop out \u00b7 " : "") + "Esc close"
   readonly property string mainFooterHint: "j/k move \u00b7 \u2192 agents \u00b7 \u2190 fold \u00b7 Enter continue \u00b7 t terminal \u00b7 m memory \u00b7 ? help \u00b7 r refresh \u00b7 " + root.closeHint
-  readonly property string footerHint: root.helpOpen ? "u or ? back \u00b7 " + root.closeHint
+  readonly property string footerHint: root.helpOpen ? "j/k scroll \u00b7 u or ? back \u00b7 " + root.closeHint
     : root.memoryOpen ? "j/k move \u00b7 \u2192 expand \u00b7 \u2190 fold \u00b7 u back \u00b7 " + root.closeHint
     : root.groupEditorOpen ? "j/k move \u00b7 Enter pick \u00b7 u back \u00b7 " + root.closeHint : root.mainFooterHint
 
@@ -280,7 +280,11 @@ Item {
     if (root.memoryOpen) return memoryPane.handleKey(key)
     if (root.groupEditorOpen) return groupEditor.handleKey(key)
     if (root.helpOpen) {
-      if (key === Qt.Key_Question) { root.helpOpen = false; return true }
+      switch (key) {
+      case Qt.Key_Question: root.helpOpen = false; return true
+      case Qt.Key_J: case Qt.Key_Down: root.scrollBy(Style.space(48)); return true
+      case Qt.Key_K: case Qt.Key_Up: root.scrollBy(-Style.space(48)); return true
+      }
       return false
     }
     var s = root.selectedSummary
@@ -333,6 +337,11 @@ Item {
     root.memoryDisplayName = displayName
     root.memoryLocation = cwd
     root.memoryOpen = true
+  }
+
+  // Help is text, not a list: j/k scroll it.
+  function scrollBy(dy) {
+    scroller.contentY = Math.max(0, Math.min(scroller.contentY + dy, scroller.contentHeight - scroller.height))
   }
 
   // Scrolls the Flickable so `target` lies inside its visible viewport: the
