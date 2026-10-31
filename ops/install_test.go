@@ -140,6 +140,7 @@ func (f *installFixture) make(target string) (string, error) {
 		"HOME="+f.home,
 		"XDG_CONFIG_HOME="+f.cfg,
 		"XDG_DATA_HOME="+filepath.Join(f.home, ".local", "share"),
+		"XDG_STATE_HOME="+filepath.Join(f.home, ".local", "state"),
 		"XDG_RUNTIME_DIR="+f.run,
 		"BACKSTORY_HEALTH_TIMEOUT="+fixtureHealthTimeout,
 		"PATH="+f.fakes+string(os.PathListSeparator)+f.host,
@@ -483,12 +484,32 @@ func TestInstallerRecordsNoProjectForBuildDir(t *testing.T) {
 	// mints no session either.
 	ctl := exec.Command(f.path(".local", "bin", "backstory"), "status") //nolint:gosec // fixture path under t.TempDir
 	ctl.Dir = clone
-	ctl.Env = append(os.Environ(), "HOME="+f.home, "XDG_RUNTIME_DIR="+f.run, "XDG_DATA_HOME="+filepath.Join(f.home, ".local", "share"))
+	ctl.Env = append(os.Environ(), "HOME="+f.home, "XDG_RUNTIME_DIR="+f.run, "XDG_DATA_HOME="+filepath.Join(f.home, ".local", "share"),
+		"XDG_STATE_HOME="+filepath.Join(f.home, ".local", "state"), "XDG_CONFIG_HOME="+f.cfg)
 	if out, err := ctl.CombinedOutput(); err != nil {
 		t.Fatalf("control status: %v\n%s", err, out)
 	}
 	if n := sessionsAt(); n != 0 {
 		t.Errorf("plain `backstory status` minted %d session(s)", n)
+	}
+}
+
+// The fixture's daemon writes its usage file under $XDG_STATE_HOME, which a
+// developer's session (Omarchy sets it) would otherwise lend it: an install
+// must leave the developer's state folder alone.
+func TestMakeInstallNeverTouchesTheDevelopersState(t *testing.T) {
+	state := t.TempDir()
+	t.Setenv("XDG_STATE_HOME", state)
+	f := newInstallFixture(t)
+	f.mustMake("install")
+	err := filepath.WalkDir(state, func(p string, d fs.DirEntry, err error) error {
+		if err == nil && !d.IsDir() {
+			t.Errorf("install wrote %s under the developer's XDG_STATE_HOME", p)
+		}
+		return err
+	})
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
