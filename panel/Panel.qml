@@ -171,13 +171,14 @@ Item {
     implicitWidth: root.baseWidth
     implicitHeight: Math.min(root.baseHeight, view.implicitHeight * root.zoom)
 
-    BorderSurface {
+    // The window's fill. Hyprland draws its border, corners and shadow, as
+    // on any other window, so the card draws none of its own.
+    Rectangle {
       id: card
       width: panel.width
       height: panel.height
       color: Util.alpha(Commons.Color.popups.background, 0.98)
-      borderSpec: Border.surfaceSpec("popups", "border", Commons.Color.popups.border, Math.max(1, Style.space(2)))
-      radius: Style.cornerRadius
+      border.width: 0
 
       // Fades in on every open, growing from just under full size, as
       // Omarchy's own panels do (Ui/PopupCard.qml); closing hides it at once.
