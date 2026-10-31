@@ -17,24 +17,27 @@ Item {
 
   property string projectKey: ""
   property string displayName: projectKey
+  // Picked for the group form below (a check mark), and highlighted by the
+  // keys or the mouse (the main view's selected-row look).
   property bool selected: false
+  property bool current: false
   property bool removable: false
   property real indent: 0
 
   signal picked()
+  signal hovered()
   signal removeRequested()
 
   implicitWidth: parent ? parent.width : Style.space(320)
   implicitHeight: Style.space(28)
 
-  // Drawn like the main view's selected row (ProjectRow.qml): one highlight,
-  // no second fill under the mouse.
+  // Drawn like the main view's selected row (ProjectRow.qml).
   Rectangle {
     objectName: "groupRowBackground"
     anchors.fill: parent
     radius: Style.cornerRadius
-    color: root.selected ? Util.alpha(Commons.Color.accent, 0.18) : "transparent"
-    border.width: root.selected ? 1 : 0
+    color: root.current ? Util.alpha(Commons.Color.accent, 0.18) : "transparent"
+    border.width: root.current ? 1 : 0
     border.color: Commons.Color.accent
   }
 
@@ -44,7 +47,22 @@ Item {
     anchors.rightMargin: removeButton.visible ? Style.space(24) : 0
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
+    onEntered: root.hovered()
     onClicked: root.picked()
+  }
+
+  Text {
+    id: checkMark
+    objectName: "pickedMark"
+    visible: root.selected
+    textFormat: Text.PlainText
+    text: Glyphs.check()
+    font.family: Style.font.family
+    font.pixelSize: Style.font.caption
+    color: Commons.Color.accent
+    anchors.verticalCenter: parent.verticalCenter
+    anchors.left: parent.left
+    anchors.leftMargin: root.indent + Style.spacing.rowPaddingX
   }
 
   Text {
@@ -57,7 +75,7 @@ Item {
     elide: Text.ElideRight
     anchors.verticalCenter: parent.verticalCenter
     anchors.left: parent.left
-    anchors.leftMargin: root.indent + Style.spacing.rowPaddingX
+    anchors.leftMargin: root.indent + Style.spacing.rowPaddingX + (root.selected ? checkMark.implicitWidth + Style.spacing.controlGap : 0)
     anchors.right: removeButton.visible ? removeButton.left : parent.right
   }
 

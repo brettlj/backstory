@@ -29,6 +29,11 @@ TestCase {
     Loader { source: Qt.resolvedUrl("../../Panel.qml") }
   }
 
+  Component {
+    id: editorComponent
+    Loader { source: Qt.resolvedUrl("../../GroupEditor.qml") }
+  }
+
   property var loader: null
   property var panel: null
 
@@ -148,15 +153,62 @@ TestCase {
     return TestUtil.findFirst(findRow(key), function (n) { return n.objectName === "groupRowBackground" })
   }
 
-  function test_picked_row_looks_like_the_main_views_selection_and_hover_adds_no_fill() {
+  function openTwoRows() {
+    ProcessController.respond(Launchers.groupListCommand(), {
+      stdout: JSON.stringify({
+        groups: [{ group: "tools" }],
+        ungrouped: ["b"],
+        projects: [{ key: "a", display_name: "a", group: "tools" }, { key: "b", display_name: "b", group: "" }]
+      }), stderr: "", exitCode: 0
+    })
     openGroupEditor()
-    act.settled(function () { return findRow(ungroupedProjectKey) !== null }, "project row never rendered")
-    var row = findRow(ungroupedProjectKey)
-    var area = TestUtil.findFirst(row, function (n) { return n.hoverEnabled === true && n.containsMouse !== undefined })
-    act.hover(row, { x: row.width / 4, until: function () { return area.containsMouse }, desc: "hovering the project row" })
-    compare(rowBackground(ungroupedProjectKey).color.a, 0, "hover drew a fill")
-    pickUngroupedProject()
-    compare(rowBackground(ungroupedProjectKey).border.width, 1)
+    findGroupEditor().refresh()
+    act.settled(function () { return findRow("b") !== null }, "ungrouped row never rendered")
+    act.quiescent(function () { return [findRow("a").mapToItem(testCase, 0, 0).y, findRow("b").mapToItem(testCase, 0, 0).y] }, "rows never stopped moving")
+  }
+
+  function pickedMark(key) {
+    return TestUtil.findFirst(findRow(key), function (n) { return n.objectName === "pickedMark" })
+  }
+
+  function test_keys_move_one_highlight_and_enter_picks() {
+    openTwoRows()
+    panel.testKeyItem.forceActiveFocus()
+    verify(findRow("a").current, "the first row is not highlighted on open")
+    compare(rowBackground("a").border.width, 1, "the highlight is not drawn like the main view's")
+    act.pressKey(Qt.Key_J)
+    act.settled(function () { return findRow("b").current && !findRow("a").current }, "j never moved the highlight down")
+    act.pressKey(Qt.Key_Return)
+    act.settledEq(findGroupEditor(), "selectedProjectKey", "b")
+    verify(pickedMark("b") !== null, "the picked row shows no check mark")
+    act.pressKey(Qt.Key_K)
+    act.settled(function () { return findRow("a").current && !findRow("b").current }, "k never moved the highlight up")
+    verify(pickedMark("b") !== null, "moving the highlight dropped the pick")
+  }
+
+  function test_a_project_with_an_empty_key_is_neither_highlighted_nor_picked_first() {
+    // A real store can hold a project with an empty key; it must not pass
+    // for "no row highlighted yet". This editor's first list holds one.
+    ProcessController.respond(Launchers.groupListCommand(), {
+      stdout: JSON.stringify({
+        groups: [{ group: "tools" }],
+        ungrouped: ["", "b"],
+        projects: [{ key: "a", display_name: "a", group: "tools" }, { key: "", display_name: "", group: "" },
+                   { key: "b", display_name: "b", group: "" }]
+      }), stderr: "", exitCode: 0
+    })
+    var l = editorComponent.createObject(testCase)
+    tryCompare(l, "status", Loader.Ready, 2000)
+    act.settledEq(l.item, "cursorKey", "a")
+    var picked = TestUtil.findAll(l.item, function (n) { return n.projectKey !== undefined && n.selected === true })
+    compare(picked.length, 0, "the empty-key row shows as picked with nothing picked")
+    l.destroy()
+  }
+
+  function test_hover_moves_the_highlight() {
+    openTwoRows()
+    act.hover(findRow("b"), { x: findRow("b").width / 4, desc: "row b", until: function () { return findRow("b").current } })
+    verify(!findRow("a").current, "two rows highlighted")
     // A cursor left over a row would hover it in the next test.
     act.moveAway(panel.testContentItem)
   }
@@ -168,7 +220,7 @@ TestCase {
 
   function test_footer_lists_the_editors_keys() {
     openGroupEditor()
-    compare(footerText(), "u back · Esc close")
+    compare(footerText(), "j/k move · Enter pick · u back · Esc close")
   }
 
   function test_u_goes_back_to_the_main_view() {

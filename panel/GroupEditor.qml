@@ -54,9 +54,26 @@ Item {
 
   signal changed()
   signal closeRequested()
+  // Asks the scroll view to show `target`, the row the keys moved to.
+  signal reveal(Item target)
 
   property var groupsData: ({ groups: [], ungrouped: [], projects: [] })
   property string selectedProjectKey: ""
+  // The one highlighted project row's key, which the keys act on and hover
+  // moves; null before there is one (a project's key can be "").
+  property var cursorKey: null
+  // Every row's project key, top to bottom: each group's members, then the
+  // ungrouped projects.
+  readonly property var rowKeys: {
+    var all = root.groupsData.projects || []
+    var keys = []
+    var groups = root.groupsData.groups || []
+    for (var i = 0; i < groups.length; i++)
+      Groups.projectsInGroup(all, groups[i].group).forEach(function (p) { keys.push(p.key) })
+    Groups.ungroupedProjects(all).forEach(function (p) { keys.push(p.key) })
+    return keys
+  }
+  onRowKeysChanged: if (root.rowKeys.indexOf(root.cursorKey) < 0) root.cursorKey = root.rowKeys.length > 0 ? root.rowKeys[0] : null
   property string newGroupName: ""
   property string errorText: ""
   property bool busy: false
@@ -66,8 +83,46 @@ Item {
     listProcess.running = true
   }
 
+  // "" is no pick, so a project whose key is "" never shows as picked.
+  function isPicked(projectKey) {
+    return root.selectedProjectKey !== "" && root.selectedProjectKey === projectKey
+  }
+
   function pickProject(projectKey) {
     root.selectedProjectKey = (root.selectedProjectKey === projectKey) ? "" : projectKey
+  }
+
+  // j/k and the arrows move the highlight, as on the main view: up from the
+  // first row shows the header again. Enter or Space picks the highlighted
+  // project, as a click does. Returns whether it used the key.
+  function handleKey(key) {
+    switch (key) {
+    case Qt.Key_J: case Qt.Key_Down: root.moveCursor(1); return true
+    case Qt.Key_K: case Qt.Key_Up: root.moveCursor(-1); return true
+    case Qt.Key_Return: case Qt.Key_Enter: case Qt.Key_Space:
+      if (root.cursorKey !== null) root.pickProject(root.cursorKey)
+      return true
+    }
+    return false
+  }
+
+  function moveCursor(delta) {
+    var i = root.rowKeys.indexOf(root.cursorKey)
+    if (i < 0) return
+    if (delta < 0 && i === 0) { root.reveal(header); return }
+    root.cursorKey = root.rowKeys[Math.max(0, Math.min(root.rowKeys.length - 1, i + delta))]
+    var row = root.rowFor(root.cursorKey, content)
+    if (row) root.reveal(row)
+  }
+
+  function rowFor(projectKey, item) {
+    for (var i = 0; i < item.children.length; i++) {
+      var child = item.children[i]
+      if (child.projectKey === projectKey) return child
+      var found = root.rowFor(projectKey, child)
+      if (found) return found
+    }
+    return null
   }
 
   function setGroup(groupName, projectKey) {
@@ -180,9 +235,11 @@ Item {
             width: content.width
             projectKey: modelData.key
             displayName: modelData.display_name
-            selected: root.selectedProjectKey === modelData.key
+            selected: root.isPicked(modelData.key)
+            current: root.cursorKey === modelData.key
             removable: true
             indent: Style.space(12)
+            onHovered: root.cursorKey = modelData.key
             onPicked: root.pickProject(modelData.key)
             onRemoveRequested: root.clearGroup(modelData.key)
           }
@@ -213,8 +270,10 @@ Item {
         width: content.width
         projectKey: modelData.key
         displayName: modelData.display_name
-        selected: root.selectedProjectKey === modelData.key
+        selected: root.isPicked(modelData.key)
+        current: root.cursorKey === modelData.key
         removable: false
+        onHovered: root.cursorKey = modelData.key
         onPicked: root.pickProject(modelData.key)
       }
     }

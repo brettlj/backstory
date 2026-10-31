@@ -115,7 +115,7 @@ Item {
   readonly property string mainFooterHint: "j/k move \u00b7 \u2192 agents \u00b7 \u2190 fold \u00b7 Enter continue \u00b7 t terminal \u00b7 m memory \u00b7 ? help \u00b7 r refresh \u00b7 " + root.closeHint
   readonly property string footerHint: root.helpOpen ? "u or ? back \u00b7 " + root.closeHint
     : root.memoryOpen ? "j/k move \u00b7 \u2192 expand \u00b7 \u2190 fold \u00b7 u back \u00b7 " + root.closeHint
-    : root.groupEditorOpen ? "u back \u00b7 " + root.closeHint : root.mainFooterHint
+    : root.groupEditorOpen ? "j/k move \u00b7 Enter pick \u00b7 u back \u00b7 " + root.closeHint : root.mainFooterHint
 
   // Hover moves the one selection the keyboard uses (no second highlight).
   function selectRow(summary, agent) {
@@ -269,16 +269,16 @@ Item {
   }
 
   // The content's key handler; returns whether it consumed the key. Esc
-  // asks the host to close; p asks it to pop out, where it can; u goes back from Groups, Memory or Help to the
-  // main body; Memory takes its own keys; the row keys act only on the main
-  // body. A text field in Groups takes its keys first, so typing there
-  // stays text.
+  // asks the host to close; p asks it to pop out, where it can; u goes back
+  // from Groups, Memory or Help to the main body; Memory and Groups take
+  // their own keys; the row keys act only on the main body. A text field in
+  // Groups takes its keys first, so typing there stays text.
   function handleKey(key, modifiers) {
     if (key === Qt.Key_Escape) { root.closeRequested(); return true }
     if (key === Qt.Key_P && root.canPopOut) { root.popOutRequested(); return true }
     if (key === Qt.Key_U && (root.groupEditorOpen || root.memoryOpen || root.helpOpen)) { root.showMain(); return true }
     if (root.memoryOpen) return memoryPane.handleKey(key)
-    if (root.groupEditorOpen) return false
+    if (root.groupEditorOpen) return groupEditor.handleKey(key)
     if (root.helpOpen) {
       if (key === Qt.Key_Question) { root.helpOpen = false; return true }
       return false
@@ -529,8 +529,10 @@ Item {
       }
 
       GroupEditor {
+        id: groupEditor
         visible: root.groupEditorOpen
         width: parent.width
+        onReveal: (target) => root.revealInScroller(target)
         onCloseRequested: root.groupEditorOpen = false
         onChanged: root.refresh()
       }

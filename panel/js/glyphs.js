@@ -20,6 +20,7 @@ function popOut() { return "\uf08e" }       // nf-fa-external_link
 function edit() { return "\uf044" }         // nf-fa-pencil_square_o
 function trash() { return "\uf1f8" }        // nf-fa-trash
 function history() { return "\uf1da" }      // nf-fa-history
+function check() { return "\uf00c" }        // nf-fa-check
 
 // One glyph per record kind the store defines (SCHEMA.md records.kind CHECK).
 var RECORD_KIND_GLYPHS = {
