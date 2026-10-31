@@ -136,17 +136,15 @@ Item {
     anchors.margins: Style.spacing.panelPadding
     spacing: Style.spacing.rowGap
 
-    Row {
-      width: parent.width
-      Text {
-        textFormat: Text.PlainText
-        text: "Groups"
-        font.family: Style.font.family
-        font.pixelSize: Style.font.title
-        font.bold: true
-        color: Commons.Color.foreground
-        width: parent.width - Style.space(24)
-      }
+    HeroHeader {
+      id: header
+      readonly property int groupCount: (root.groupsData.groups || []).length
+      readonly property int projectCount: (root.groupsData.projects || []).length
+      glyph: Glyphs.gear()
+      title: "Groups"
+      status: header.groupCount + (header.groupCount === 1 ? " group · " : " groups · ")
+        + header.projectCount + (header.projectCount === 1 ? " project this week" : " projects this week")
+
       PanelActionButton {
         iconText: Glyphs.back()
         tooltipText: "Back"

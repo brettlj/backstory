@@ -115,6 +115,36 @@ TestCase {
     act.settledEq(field, "text", name)
   }
 
+  function heroStatusText() {
+    var n = TestUtil.findFirst(panel.testContentItem, function (node) { return node.objectName === "heroStatus" })
+    return n === null ? null : n.text
+  }
+
+  // Waits for the header's status line, then compares it so a failure shows what it read.
+  function expectHeroStatus(text) {
+    for (var i = 0; i < 100 && heroStatusText() !== text; i++) wait(20)
+    compare(heroStatusText(), text)
+  }
+
+  function test_header_counts_groups_and_projects() {
+    openGroupEditor()
+    expectHeroStatus("0 groups · 1 project this week")
+  }
+
+  function test_header_says_one_group() {
+    ProcessController.respond(Launchers.groupListCommand(), {
+      stdout: JSON.stringify({
+        groups: [{ group: "tools" }],
+        ungrouped: [],
+        projects: [{ key: "a", display_name: "a", group: "tools" }, { key: "b", display_name: "b", group: "tools" }]
+      }), stderr: "", exitCode: 0
+    })
+    openGroupEditor()
+    // The editor fetched init()'s list when the panel loaded; fetch this one.
+    findGroupEditor().refresh()
+    expectHeroStatus("1 group · 2 projects this week")
+  }
+
   function test_add_group_runs_backstory_group_set() {
     openGroupEditor()
     pickUngroupedProject()
