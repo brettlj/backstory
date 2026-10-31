@@ -298,6 +298,19 @@ TestCase {
     compare(Hyprland.dispatched.length, sent, "still sent to the closed window: " + Hyprland.dispatched.slice(sent))
   }
 
+  // Popping out while the window is open on another workspace: it takes
+  // the popup's view, comes over and takes focus, and closes the popup.
+  function test_pop_out_with_the_window_open_brings_it_and_closes_the_popup() {
+    listWindow(false, 3)
+    Hyprland.focusedWorkspace = { id: 1 }
+    openWith(readFixture(goldenUrl))
+    panel.open(JSON.stringify({ view: "help", from: popFrom }))
+    compare(panel.view.helpOpen, true)
+    compare(Hyprland.dispatched, ['hl.dsp.window.move({ workspace = "1", window = "address:0xbb22" })',
+                                  'hl.dsp.focus({ window = "address:0xbb22" })'])
+    verify(Quickshell.execDetachedCalls.some(function (c) { return JSON.stringify(c.command) === JSON.stringify(Launchers.popupCloseCommand()) }), "the popup was not closed")
+  }
+
   function test_a_bad_from_opens_the_window_as_usual() {
     listWindow(true, 1)
     ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })

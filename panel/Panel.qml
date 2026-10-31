@@ -89,6 +89,12 @@ Item {
     // A pop-out starts before the window maps, so it maps hidden.
     var from = state && typeof state === "object" ? Popout.fromRect(state.from) : null
     if (!root.opened && from) root.startPopOut(from)
+    // Already open: it takes the popup's view below, comes to the front and
+    // closes the popup at once (found by review: it did neither).
+    if (root.opened && from) {
+      root.bringToFront()
+      Quickshell.execDetached(Launchers.popupCloseCommand())
+    }
     if (!root.opened) root.pinned = false
     root.opened = true
     if (state && typeof state === "object" && state.view !== undefined) view.restore(state)
@@ -238,19 +244,32 @@ Item {
     return "ok"
   }
 
-  // The window's IPC toggle: open the window; close it when it has focus; otherwise focus it, first moving it to the workspace you are
-  // on when it is elsewhere and not pinned.
+  // The window's IPC toggle: open the window; close it when it has focus;
+  // otherwise bring it to the front.
   function toggle() {
     if (!root.opened) { root.open("{}"); return }
     var t = root.windowToplevel()
-    var a = root.windowAddress(t)
-    if (a === "") { root.close(); return }
-    var ws = Hyprland.focusedWorkspace
-    var elsewhere = ws && ws.id >= 1 && t.workspace && t.workspace.id !== ws.id
+    if (root.windowAddress(t) === "") { root.close(); return }
     // Hyprland leaves `activated` set after you switch to an empty
     // workspace, so a window elsewhere does not count as focused.
-    if (t.activated && !elsewhere) { root.close(); return }
-    if (elsewhere && !root.pinned) Hyprland.dispatch(Launchers.moveWindowDispatch(a, ws.id))
+    if (t.activated && !root.elsewhere(t)) { root.close(); return }
+    root.bringToFront()
+  }
+
+  // The window is on another workspace than the one you are on.
+  function elsewhere(t) {
+    var ws = Hyprland.focusedWorkspace
+    return !!(ws && ws.id >= 1 && t.workspace && t.workspace.id !== ws.id)
+  }
+
+  // Focus the window, first moving it to the workspace you are on when it
+  // is elsewhere and not pinned.
+  function bringToFront() {
+    var t = root.windowToplevel()
+    var a = root.windowAddress(t)
+    if (a === "") return
+    if (root.elsewhere(t) && !root.pinned)
+      Hyprland.dispatch(Launchers.moveWindowDispatch(a, Hyprland.focusedWorkspace.id))
     Hyprland.dispatch(Launchers.focusWindowDispatch(a))
   }
 
