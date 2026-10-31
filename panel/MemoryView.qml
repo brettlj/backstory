@@ -45,7 +45,9 @@ Item {
   // which the next opening takes instead.
   property var expandedIds: ({})
   property var pendingExpanded: null
-  property string shownProjectKey: ""
+  // The project and folder last shown: records are kept per folder
+  // (--location), and two folders can share a project key.
+  property string shownScope: ""
   property string errorText: ""
   property bool busy: false
   // The one highlighted record, which the keys act on and hover moves.
@@ -81,12 +83,12 @@ Item {
         root.expandedIds = root.pendingExpanded
         root.pendingExpanded = null
         root.cursorIndex = 0
-      } else if (root.projectKey !== root.shownProjectKey) {
+      } else if (root.projectKey + "\n" + root.location !== root.shownScope) {
         root.expandedIds = {}
         root.cursorIndex = 0
         page.scrollToTop()
       }
-      root.shownProjectKey = root.projectKey
+      root.shownScope = root.projectKey + "\n" + root.location
       root.errorText = ""
       root.confirmingId = ""
       root.pendingPurge = null

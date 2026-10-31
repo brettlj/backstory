@@ -400,6 +400,22 @@ TestCase {
     verify(recordItem(ids[0]).current, "another project kept the highlight")
   }
 
+  // Two folders can share a project key; Memory is per folder, so the other
+  // folder starts at the top too (found by review).
+  function test_another_folder_of_the_same_project_starts_at_the_top() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    openMemory(readFixture(recordsGolden))
+    panel.testKeyItem.forceActiveFocus()
+    act.pressKey(Qt.Key_J)
+    act.settled(function () { return recordItem(ids[1]).current }, "j never moved the highlight")
+    act.pressKey(Qt.Key_U)
+    act.settledEq(panel.view, "memoryOpen", false)
+    ProcessController.respond(Launchers.recordsCommand(projectKey, "/home/x/acme-2", false), { stdout: readFixture(recordsGolden), stderr: "", exitCode: 0 })
+    panel.view.openMemory(projectKey, "acme-2", "/home/x/acme-2")
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") && recordItem(ids[0]) !== null }, "the other folder's Memory never opened")
+    verify(recordItem(ids[0]).current, "another folder kept the highlight")
+  }
+
   function test_hover_moves_the_highlight() {
     var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
     openMemory(readFixture(recordsGolden))
