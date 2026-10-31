@@ -594,6 +594,7 @@ Item {
 
         MemoryView {
           id: memoryPane
+          shown: root.memoryOpen
           width: parent.width
           projectKey: root.memoryProjectKey
           displayName: root.memoryDisplayName

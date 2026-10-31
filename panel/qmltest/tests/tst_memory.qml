@@ -370,6 +370,36 @@ TestCase {
     act.settled(function () { return recordItem(ids[0]).expanded }, "Enter never expanded the highlighted record")
   }
 
+  function test_going_back_into_the_same_projects_memory_keeps_the_highlight_and_expanded_records() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    openMemory(readFixture(recordsGolden))
+    panel.testKeyItem.forceActiveFocus()
+    act.pressKey(Qt.Key_J)
+    act.pressKey(Qt.Key_J)
+    act.pressKey(Qt.Key_Right)
+    act.settled(function () { return recordItem(ids[2]).current && recordItem(ids[2]).expanded }, "never highlighted and expanded the third record")
+    act.pressKey(Qt.Key_U)
+    act.settledEq(panel.view, "memoryOpen", false)
+    act.pressKey(Qt.Key_M)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") && recordItem(ids[2]) !== null }, "Memory never came back")
+    verify(recordItem(ids[2]).current, "the highlight went back to the top")
+    verify(recordItem(ids[2]).expanded, "the expanded record folded")
+  }
+
+  function test_another_projects_memory_starts_at_the_top() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    openMemory(readFixture(recordsGolden))
+    panel.testKeyItem.forceActiveFocus()
+    act.pressKey(Qt.Key_J)
+    act.settled(function () { return recordItem(ids[1]).current }, "j never moved the highlight")
+    act.pressKey(Qt.Key_U)
+    act.settledEq(panel.view, "memoryOpen", false)
+    ProcessController.respond(Launchers.recordsCommand("other", "/home/x/other", false), { stdout: readFixture(recordsGolden), stderr: "", exitCode: 0 })
+    panel.view.openMemory("other", "other", "/home/x/other")
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") && recordItem(ids[0]) !== null }, "the other project's Memory never opened")
+    verify(recordItem(ids[0]).current, "another project kept the highlight")
+  }
+
   function test_hover_moves_the_highlight() {
     var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
     openMemory(readFixture(recordsGolden))

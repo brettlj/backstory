@@ -13,7 +13,7 @@ import "js/glyphs.js" as Glyphs
 // edit, delete — plus "Forget activity and saved records". A CLI CLIENT like the rest of the
 // panel: it runs `backstory records|edit|delete|purge` and reads stdout,
 // never the store. Swapped in for the This Week body by Panel.qml (same
-// pattern as GroupEditor). Refreshes whenever it becomes visible, so a
+// pattern as GroupEditor). Refreshes whenever it is opened (shown), so a
 // record edited in a terminal shows up on the next open (no polling).
 Item {
   id: root
@@ -40,10 +40,13 @@ Item {
   property var payload: ({})
   property bool showHistory: false
   // Which records show their full text, keyed by record id. Opening the view
-  // starts from pendingExpanded: empty, unless restore() was handed a
-  // snapshot (the bar popup's pop-out into the window).
+  // again for the same project keeps them and the highlight; another project
+  // starts with none expanded and the first record highlighted; a snapshot
+  // handed to restore() (the bar popup's pop-out) sets pendingExpanded,
+  // which the next opening takes instead.
   property var expandedIds: ({})
-  property var pendingExpanded: ({})
+  property var pendingExpanded: null
+  property string shownProjectKey: ""
   property string errorText: ""
   property bool busy: false
   // The one highlighted record, which the keys act on and hover moves.
@@ -68,11 +71,22 @@ Item {
     listProcess.running = true
   }
 
-  onVisibleChanged: {
-    if (root.visible) {
-      root.expandedIds = root.pendingExpanded
-      root.pendingExpanded = {}
-      root.cursorIndex = 0
+  // Set while Memory is the view showing. Opening runs on this, not on
+  // visible: the page stays visible while it slides out, so going back in
+  // during the slide would not count as opening it.
+  property bool shown: false
+
+  onShownChanged: {
+    if (root.shown) {
+      if (root.pendingExpanded !== null) {
+        root.expandedIds = root.pendingExpanded
+        root.pendingExpanded = null
+        root.cursorIndex = 0
+      } else if (root.projectKey !== root.shownProjectKey) {
+        root.expandedIds = {}
+        root.cursorIndex = 0
+      }
+      root.shownProjectKey = root.projectKey
       root.errorText = ""
       root.confirmingId = ""
       root.pendingPurge = null
