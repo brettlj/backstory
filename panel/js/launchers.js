@@ -23,15 +23,14 @@
 //     omarchy-launch-or-focus does (Continue when `window` is set).
 //   - `tmux select-window` / `select-pane`: after that focus, jump to the
 //     tmux window holding the project (Continue when `tmux` is set).
-//   - `omarchy-shell shell toggle backstory.this-week {}`: the bar widget's
-//     click (round 4 desk defect A). MEASURED ON BRIAN'S DESK: BarWidget
-//     used to flip a shared PanelState singleton directly, but the host
-//     only ever shows a plugin panel through its OWN toggle — the host's
-//     own plugin, ridgetopai.omarcade's Marquee.qml:253, does exactly this
-//     `Quickshell.execDetached(["omarchy-shell", "shell", "toggle", ...])`
-//     to open its own panel, confirmed working. this-week's own IpcHandler
-//     (Panel.qml) still answers the "panel" kind contract's open()/close()/
-//     toggle() the host may also call directly.
+//   - `omarchy-shell shell summon backstory.this-week <snapshot>`: the bar
+//     popup's pop-out opens the window where the popup was, through the
+//     host's own summon (the host shows a plugin panel only through its own
+//     summon/toggle), and `omarchy-shell backstory.this-week.popup close`:
+//     the window, once in the popup's place, closes the popup.
+//   - Hyprland dispatch requests (Hyprland.dispatch, not a process): pin,
+//     move, resize and focus the window itself, its address checked by
+//     isWindowAddress first.
 
 // windowSummonCommand opens the plugin's window (its "panel" kind): the
 // shell routes summon to the panel loader for a plugin that is also a bar
@@ -206,6 +205,27 @@ function moveWindowDispatch(addr, workspaceId) {
 
 function focusWindowDispatch(addr) {
   return 'hl.dsp.focus({ window = "address:' + addr + '" })'
+}
+
+// resizeWindowDispatch / moveWindowToDispatch size and place the window (the
+// pop-out); windowAnimDispatch lets Hyprland animate it ("0") or hands back
+// to its rule ("unset"). Sizes and positions are rounded to whole pixels.
+function resizeWindowDispatch(addr, w, h) {
+  return 'hl.dsp.window.resize({ x = ' + Math.round(w) + ', y = ' + Math.round(h) + ', window = "address:' + addr + '" })'
+}
+
+function moveWindowToDispatch(addr, x, y) {
+  return 'hl.dsp.window.move({ x = ' + Math.round(x) + ', y = ' + Math.round(y) + ', window = "address:' + addr + '" })'
+}
+
+function windowAnimDispatch(addr, animate) {
+  return 'hl.dsp.window.set_prop({ prop = "no_anim", value = "' + (animate ? "0" : "unset") + '", window = "address:' + addr + '" })'
+}
+
+// popupCloseCommand: the window, once it sits where the bar popup's card is,
+// closes the popup, which fades out over it (BarWidget.qml's IPC target).
+function popupCloseCommand() {
+  return ["omarchy-shell", "backstory.this-week.popup", "close"]
 }
 
 function focusWindowFallbackCommand(addr) {

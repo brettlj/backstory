@@ -149,12 +149,11 @@ TestCase {
     view.memoryOpen = true
     verify(view.footerHint.indexOf("p pop out") >= 0, "footer never listed p: " + view.footerHint)
     verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
-    compare(widget.opened, false)
     var run = act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
     compare(JSON.parse(run.command[4]).view, "memory")
   }
 
-  function test_pop_out_closes_the_popup_and_summons_the_window() {
+  function test_pop_out_summons_the_window_where_the_popup_is() {
     var widget = start(fixture())
     var content = openPopup(widget)
     // The popup's content is outside the test scene, so the button can't be
@@ -163,13 +162,39 @@ TestCase {
     verify(view !== null && view.canPopOut === true, "the popup's view offers no pop-out")
     verify(TestUtil.findFirst(content, function (n) { return n.tooltipText === "Pop out" }) !== null, "no pop-out button in the popup")
     compare(TestUtil.findFirst(content, function (n) { return n.objectName === "pinButton" }), null, "the popup offers a pin")
+    widget.testPopup.cardOrigin = Qt.point(3700, 34)
+    widget.testPopup.barThickness = 26
+    widget.testPopup.gap = 8
     view.helpOpen = true
     view.popOutRequested()
-    compare(widget.opened, false)
     var run = act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
     compare(JSON.stringify(run.command.slice(0, 4)), JSON.stringify(["omarchy-shell", "shell", "summon", "backstory.this-week"]))
-    // The window opens where the popup was: the snapshot taken before it closed.
-    compare(JSON.parse(run.command[4]).view, "help")
+    // The window opens where you were in the popup, and where its card is.
+    var payload = JSON.parse(run.command[4])
+    compare(payload.view, "help")
+    compare(JSON.stringify(payload.from), JSON.stringify({ x: 3700, y: 34, w: widget.testPopup.contentWidth, h: widget.testPopup.drawnHeight, bar: 26, gap: 8, monX: 0, monY: 0 }))
+  }
+
+  // The popup stays up until the window, in its place, closes it, so
+  // nothing blinks between them.
+  function test_popup_stays_up_until_the_window_closes_it() {
+    var widget = start(fixture())
+    var content = openPopup(widget)
+    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
+    compare(widget.opened, true, "the popup closed before the window took its place")
+    widget.closeAfterPopOut()
+    compare(widget.opened, false)
+  }
+
+  // If the window never takes its place, the popup closes anyway.
+  function test_popup_closes_when_the_window_never_comes() {
+    var widget = start(fixture())
+    widget.popOutGiveUpMs = 100
+    var content = openPopup(widget)
+    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    compare(widget.opened, true)
+    act.settledEq(widget, "opened", false)
   }
 
   function test_tab_moves_to_the_next_bar_panel() {

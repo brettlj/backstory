@@ -18,9 +18,10 @@ import "js/format.js" as Format
 // are ($OMARCHY_PATH/shell/plugins/panels/monitor/Panel.qml), so the bar
 // closes it when another panel opens, Tab moves to the next bar panel, and
 // it closes on Esc or a click outside. The window (Panel.qml) stays the
-// plugin's "panel" kind: the shell's summon/toggle and CTRL+SHIFT+B open
-// that, since the shell routes them to the panel loader for a plugin that
-// is both kinds ($OMARCHY_PATH/shell/shell.qml isBarWidgetPanelPlugin).
+// plugin's "panel" kind: the shell's summon/toggle open that, since the
+// shell routes them to the panel loader for a plugin that is both kinds
+// ($OMARCHY_PATH/shell/shell.qml isBarWidgetPanelPlugin). CTRL+SHIFT+B
+// reaches this popup through its own IPC target below.
 //
 // It shows the `here` project's short name beside the glyph. Left click
 // toggles the popup, right click is Continue on `here`, middle click
@@ -51,12 +52,42 @@ Ui.Panel {
   // Test-only handle onto the popup (its content is built on first open).
   readonly property var testPopup: popup
 
-  // The popup's pop-out button: close the popup and open the window, which
-  // you can move and which stays open when other bar panels open, at the
-  // snapshot the popup's view took just before (where you were in it).
+  // The popup's pop-out button: open the window, which you can move and
+  // which stays open when other bar panels open, at the snapshot the popup's
+  // view took just before (where you were in it) and where the popup's card
+  // is on screen (`from`, js/popout.js). The popup stays up until the window
+  // sits in its place and closes it (closeAfterPopOut), so nothing blinks
+  // between them; if the window never does, it closes after popOutGiveUpMs.
+  property int popOutGiveUpMs: 1500
+
   function popOut(snapshot) {
-    root.close()
+    snapshot.from = root.cardOnScreen()
+    popOutGiveUp.restart()
     Quickshell.execDetached(Launchers.windowSummonCommand(JSON.stringify(snapshot)))
+  }
+
+  function closeAfterPopOut() {
+    popOutGiveUp.stop()
+    root.close()
+  }
+
+  // The popup's card on screen (logical px), the bar's thickness and the
+  // card's gap below it, and the monitor's origin.
+  function cardOnScreen() {
+    var scr = popup.screen
+    var monX = scr ? scr.x : 0
+    var monY = scr ? scr.y : 0
+    return {
+      x: monX + popup.cardOrigin.x, y: monY + popup.cardOrigin.y,
+      w: popup.contentWidth, h: popup.drawnHeight,
+      bar: popup.barThickness, gap: popup.gap, monX: monX, monY: monY
+    }
+  }
+
+  Timer {
+    id: popOutGiveUp
+    interval: root.popOutGiveUpMs
+    onTriggered: root.close()
   }
 
   function refresh() {
@@ -77,6 +108,10 @@ Ui.Panel {
     function toggle(): string {
       root.toggle()
       if (root.opened) root.refresh()
+      return "ok"
+    }
+    function close(): string {
+      root.closeAfterPopOut()
       return "ok"
     }
   }

@@ -15,6 +15,12 @@ QtObject {
   property int contentHeight: 0
   property Component content: null
   property bool contentRequested: false
+  // Where the card sits on screen, as the real one computes it.
+  property point cardOrigin: Qt.point(0, 0)
+  property real drawnHeight: contentHeight
+  property real barThickness: 0
+  property int gap: 0
+  property var screen: null
 
   readonly property Item loadedContent: _loader.item
   readonly property real loadedContentHeight: loadedContent ? loadedContent.implicitHeight : 0

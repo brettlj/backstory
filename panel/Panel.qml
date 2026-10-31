@@ -6,6 +6,7 @@ import qs.Ui
 import qs.Commons
 import qs.Commons as Commons
 import "js/launchers.js" as Launchers
+import "js/popout.js" as Popout
 
 // Backstory: a CLIENT-only panel, the floating window around ThisWeekView
 // (the HERE card, Needs you, and Recent). The host injects
@@ -80,13 +81,114 @@ Item {
   // plain "{}" (CTRL+SHIFT+B, IPC) opens as it always has. Any process can
   // send a payload, so an oversized or unreadable one is ignored.
   function open(payloadJson) {
-    if (!root.opened) root.pinned = false
-    root.opened = true
     var state = null
     if (typeof payloadJson === "string" && payloadJson.length <= 65536) {
       try { state = JSON.parse(payloadJson) } catch (e) { state = null }
     }
+    // A pop-out starts before the window maps, so it maps hidden.
+    var from = state && typeof state === "object" ? Popout.fromRect(state.from) : null
+    if (!root.opened && from) root.startPopOut(from)
+    if (!root.opened) root.pinned = false
+    root.opened = true
     if (state && typeof state === "object" && state.view !== undefined) view.restore(state)
+  }
+
+  // ---- The pop-out from the bar popup (BarWidget.qml sends `from`) ----
+  // The window maps under popOutTitle, which ops/hyprland/backstory.lua draws
+  // with no decorations, and with the card hidden. Once it sits on the
+  // popup's card and has its data it shows, with its usual title, and closes
+  // the popup, which fades out over it; then Hyprland moves it one diagonal
+  // step to rest (js/popout.js restRect). popOutGrow is how much taller it
+  // gets on the way.
+  readonly property string popOutTitle: root.windowTitle + "-popout"
+  property bool popping: false
+  property bool cardRevealed: true
+  property var popFrom: null
+  property string popAddr: ""
+  property real popOutGrow: 0
+  // The popup's close fade (KeyboardPanel's 120 ms), before the move, so the
+  // fading popup is not left behind.
+  readonly property int popOutHoldMs: 140
+
+  function startPopOut(from) {
+    root.popFrom = from
+    root.popping = true
+    root.cardRevealed = false
+    popPlace.tries = 0
+    popPlace.start()
+  }
+
+  // The window is placed or given up on: show it and close the popup.
+  function revealPopOut() {
+    root.cardRevealed = true
+    root.popping = false
+    Quickshell.execDetached(Launchers.popupCloseCommand())
+  }
+
+  function stopPopOut() {
+    popPlace.stop()
+    popReveal.stop()
+    popMove.stop()
+    root.popping = false
+    root.cardRevealed = true
+  }
+
+  // Waits for the window among Hyprland's, then puts it on the popup's card.
+  Timer {
+    id: popPlace
+    property int tries: 0
+    interval: 16
+    repeat: true
+    onTriggered: {
+      var a = root.windowAddress(root.windowToplevel())
+      popPlace.tries++
+      if (a === "" && popPlace.tries < 60) return
+      popPlace.stop()
+      if (a === "") { root.revealPopOut(); return }
+      root.popAddr = a
+      // Resize first: Hyprland keeps a resized window centered, so a move
+      // after it lands where it says.
+      Hyprland.dispatch(Launchers.resizeWindowDispatch(a, root.popFrom.w, root.popFrom.h))
+      Hyprland.dispatch(Launchers.moveWindowToDispatch(a, root.popFrom.x, root.popFrom.y))
+      popReveal.tries = 0
+      popReveal.start()
+    }
+  }
+
+  // Waits for the view's data (up to about 0.6 s), then shows the window.
+  Timer {
+    id: popReveal
+    property int tries: 0
+    interval: 16
+    repeat: true
+    onTriggered: {
+      popReveal.tries++
+      if ((view.loading || !view.hasLoaded) && popReveal.tries < 40) return
+      popReveal.stop()
+      root.revealPopOut()
+      popMove.start()
+    }
+  }
+
+  // One diagonal move to rest, animated by Hyprland's own window animation,
+  // then the window's rule (no_anim) again.
+  Timer {
+    id: popMove
+    interval: root.popOutHoldMs
+    onTriggered: {
+      var a = root.popAddr
+      var rest = Popout.restRect(root.popFrom, root.popOutGrow)
+      Hyprland.dispatch(Launchers.windowAnimDispatch(a, true))
+      Hyprland.dispatch(Launchers.resizeWindowDispatch(a, rest.w, rest.h))
+      Hyprland.dispatch(Launchers.moveWindowToDispatch(a, rest.x, rest.y))
+      popAnimDone.start()
+    }
+  }
+
+  Timer {
+    id: popAnimDone
+    interval: 800
+    onTriggered: Hyprland.dispatch(Launchers.windowAnimDispatch(root.popAddr, false))
   }
 
   // This window among Hyprland's: its title and Quickshell's app id, as the
@@ -95,7 +197,7 @@ Item {
     var all = Hyprland.toplevels.values
     for (var i = 0; i < all.length; i++) {
       var t = all[i]
-      if (t.title === root.windowTitle && t.wayland && t.wayland.appId === "org.quickshell") return t
+      if ((t.title === root.windowTitle || t.title === root.popOutTitle) && t.wayland && t.wayland.appId === "org.quickshell") return t
     }
     return null
   }
@@ -115,6 +217,7 @@ Item {
   }
 
   function close() {
+    root.stopPopOut()
     root.opened = false
   }
 
@@ -159,7 +262,7 @@ Item {
   // windowTitle at a default size/position.
   FloatingWindow {
     id: panel
-    title: root.windowTitle
+    title: root.popping ? root.popOutTitle : root.windowTitle
     color: "transparent"
     // Re-applies on every opened change, and survives a direct write to
     // panel.visible (which would sever a plain `visible: root.opened` binding).
@@ -192,6 +295,8 @@ Item {
           easing.type: Easing.OutCubic
         }
       }
+      // Hidden while a pop-out puts the window in place.
+      visible: root.cardRevealed
       opacity: shown
       scale: 0.97 + 0.03 * shown
       transformOrigin: Item.Top

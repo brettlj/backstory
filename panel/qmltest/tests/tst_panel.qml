@@ -6,6 +6,7 @@ import Quickshell.Hyprland
 import "testutil.js" as TestUtil
 import "../../js/launchers.js" as Launchers
 import "../../js/glyphs.js" as Glyphs
+import "../../js/popout.js" as Popout
 
 // The Panel.qml integration suite (task 4fe02e30 Part 1 harness): feeds
 // the plugin's real Process stub the committed this-week golden, `{}`, and
@@ -201,6 +202,65 @@ TestCase {
     openWith(readFixture(goldenUrl))
     compare(panel.toggleIfOpen(), "ok")
     compare(panel.opened, false, "the focused window did not close")
+  }
+
+  // ---- The pop-out from the bar popup ----
+  readonly property var popFrom: ({ x: 3700, y: 34, w: 380, h: 560, bar: 26, gap: 8, monX: 0, monY: 0 })
+
+  function popOutPayload(from) {
+    return JSON.stringify({ view: "main", from: from })
+  }
+
+  function test_rest_is_a_bar_height_down_and_left_and_taller_by_the_grow() {
+    compare(JSON.stringify(Popout.restRect(Popout.fromRect(popFrom), 18)), JSON.stringify({ x: 3674, y: 52, w: 380, h: 578 }))
+  }
+
+  function test_a_from_that_is_not_plain_numbers_in_range_is_refused() {
+    verify(Popout.fromRect(popFrom) !== null)
+    var bad = [null, "x", {}, Object.assign({}, popFrom, { x: "3700" }), Object.assign({}, popFrom, { w: 0 }),
+               Object.assign({}, popFrom, { h: NaN }), Object.assign({}, popFrom, { y: 1e9 }), Object.assign({}, popFrom, { bar: -1 })]
+    for (var i = 0; i < bad.length; i++) compare(Popout.fromRect(bad[i]), null, "accepted " + JSON.stringify(bad[i]))
+  }
+
+  function test_pop_out_opens_hidden_then_takes_the_popups_place_shows_and_moves() {
+    listWindow(true, 1)
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    panel.open(popOutPayload(popFrom))
+    compare(panel.testWindow.title, "backstory-popout", "the window did not open under the pop-out title")
+    verify(!panel.testKeyItem.visible, "the card showed before the window was in place")
+    var a = "0xbb22"
+    var place = [Launchers.resizeWindowDispatch(a, 380, 560), Launchers.moveWindowToDispatch(a, 3700, 34)]
+    act.settled(function () { return Hyprland.dispatched.length >= 2 }, "the window was never placed")
+    compare(Hyprland.dispatched.slice(0, 2), place)
+    act.settled(function () { return panel.testKeyItem.visible && panel.testWindow.title === "backstory" }, "the window never showed")
+    verify(Quickshell.execDetachedCalls.some(function (c) { return JSON.stringify(c.command) === JSON.stringify(Launchers.popupCloseCommand()) }), "the popup was never closed")
+    var rest = Popout.restRect(Popout.fromRect(popFrom), panel.popOutGrow)
+    var move = [Launchers.windowAnimDispatch(a, true), Launchers.resizeWindowDispatch(a, rest.w, rest.h), Launchers.moveWindowToDispatch(a, rest.x, rest.y)]
+    act.settled(function () { return Hyprland.dispatched.length >= 5 }, "the window never moved to rest")
+    compare(Hyprland.dispatched.slice(2, 5), move)
+    act.settled(function () { return Hyprland.dispatched.length >= 6 }, "the rule's no_anim never came back")
+    compare(Hyprland.dispatched[5], Launchers.windowAnimDispatch(a, false))
+  }
+
+  function test_a_bad_from_opens_the_window_as_usual() {
+    listWindow(true, 1)
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    panel.open(popOutPayload(Object.assign({}, popFrom, { w: -5 })))
+    compare(panel.testWindow.title, "backstory")
+    verify(panel.testKeyItem.visible)
+    wait(100)
+    compare(Hyprland.dispatched, [])
+  }
+
+  function test_closing_during_a_pop_out_stops_it() {
+    listWindow(true, 1)
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    panel.open(popOutPayload(popFrom))
+    panel.close()
+    compare(panel.popping, false)
+    compare(panel.cardRevealed, true)
+    wait(300)
+    compare(Hyprland.dispatched, [], "the closed window was still moved")
   }
 
   // ---- The shortcut (toggle) with the window open ----
