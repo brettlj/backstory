@@ -121,6 +121,7 @@ Item {
     root.cardRevealed = false
     popPlace.tries = 0
     popPlace.start()
+    glow.light(Qt.rect(from.x - from.monX, from.y - from.monY, from.w, from.h))
   }
 
   // The window is placed or given up on: show it and close the popup.
@@ -151,7 +152,7 @@ Item {
       popPlace.tries++
       if (a === "" && popPlace.tries < 60) return
       popPlace.stop()
-      if (a === "") { root.revealPopOut(); return }
+      if (a === "") { glow.stop(); root.revealPopOut(); return }
       root.popAddr = a
       // Resize first: Hyprland keeps a resized window centered, so a move
       // after it lands where it says.

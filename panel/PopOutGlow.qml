@@ -10,7 +10,9 @@ import qs.Commons as Commons
 // than it and fading both outward and inward, that travels with it from the
 // popup's card to its rest at Hyprland's window animation (Omarchy's
 // looknfeel.lua "windows": easeOutQuint, speed 3.79, about 380 ms). It eases
-// in, then goes twice as fast. Hyprland's shadow settings are global, so one
+// in, then goes twice as fast. It lights around the card the moment the
+// pop-out starts (light()) and holds there until the window moves (play()).
+// Hyprland's shadow settings are global, so one
 // window's can't flash; this is a click-through overlay instead, as Omarchy's
 // OSD is, mapped only while it plays.
 OverlayWindow {
@@ -22,20 +24,34 @@ OverlayWindow {
 
   readonly property real pad: Style.space(30)
   readonly property int moveMs: Style.duration(380)
-  // Set by play() and cleared when the glow is done; the animation itself
-  // waits for the surface (started).
+  // Set by light() or play() and cleared when the glow is done; the
+  // animation itself waits for the surface (started).
   property bool playing: false
   property bool started: false
+  property bool travels: false
   property rect fromRect: Qt.rect(0, 0, 0, 0)
   property rect toRect: Qt.rect(0, 0, 0, 0)
   // For tests: the ring's box.
   readonly property Item box: glowBox
 
-  // from, to: the window's rects, local to the monitor. It plays once the
-  // overlay's surface is ready.
+  // rect: the popup's card, local to the monitor. The glow fades in there.
+  function light(rect) {
+    root.fromRect = rect
+    root.toRect = rect
+    root.begin(false)
+  }
+
+  // from, to: the window's rects, local to the monitor. The glow travels
+  // with the window, brightening if it isn't yet, then goes.
   function play(from, to) {
     root.fromRect = from
     root.toRect = to
+    root.begin(true)
+  }
+
+  // Either runs once the overlay's surface is ready.
+  function begin(travels) {
+    root.travels = travels
     root.started = false
     root.playing = true
     if (root.contentRevealed) root.start()
@@ -43,11 +59,21 @@ OverlayWindow {
 
   function start() {
     root.started = true
-    anim.restart()
+    if (root.travels) {
+      lightAnim.stop()
+      anim.restart()
+    } else {
+      glowBox.x = root.fromRect.x - root.pad
+      glowBox.y = root.fromRect.y - root.pad
+      glowBox.width = root.fromRect.width + root.pad * 2
+      glowBox.height = root.fromRect.height + root.pad * 2
+      lightAnim.restart()
+    }
   }
 
-  // The window closed mid-flash.
+  // The window closed mid-flash, or never came.
   function stop() {
+    lightAnim.stop()
     anim.stop()
     glowBox.opacity = 0
     root.playing = false
@@ -89,6 +115,11 @@ OverlayWindow {
     }
   }
 
+  NumberAnimation {
+    id: lightAnim
+    target: glowBox; property: "opacity"; to: 1; duration: Style.duration(240); easing.type: Easing.InQuad
+  }
+
   ParallelAnimation {
     id: anim
     onFinished: root.playing = false
@@ -109,7 +140,8 @@ OverlayWindow {
       from: root.fromRect.height + root.pad * 2; to: root.toRect.height + root.pad * 2
     }
     SequentialAnimation {
-      NumberAnimation { target: glowBox; property: "opacity"; from: 0; to: 1; duration: Style.duration(240); easing.type: Easing.InQuad }
+      // From wherever light() got to: a lit glow holds, then goes.
+      NumberAnimation { target: glowBox; property: "opacity"; to: 1; duration: Style.duration(240); easing.type: Easing.InQuad }
       NumberAnimation { target: glowBox; property: "opacity"; to: 0; duration: Style.duration(120); easing.type: Easing.OutQuad }
     }
   }

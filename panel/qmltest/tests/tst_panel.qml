@@ -284,15 +284,47 @@ TestCase {
     var glow = panel.testGlow
     var brightest = 0
     var wasShown = false
-    glow.box.opacityChanged.connect(function () { brightest = Math.max(brightest, glow.box.opacity) })
+    // Lit at the card, it holds as the window moves, then goes: it never
+    // dims and brightens again (a blink).
+    var prev = 0, fell = false, blinked = false
+    glow.box.opacityChanged.connect(function () {
+      var o = glow.box.opacity
+      brightest = Math.max(brightest, o)
+      if (o < prev) fell = true
+      else if (o > prev && fell) blinked = true
+      prev = o
+    })
     glow.shownChanged.connect(function () { if (glow.shown) wasShown = true })
     panel.open(popOutPayload(popFrom))
     act.settled(function () { return wasShown && !glow.shown }, "the glow never played and went")
     verify(brightest > 0.99, "the glow never brightened fully: " + brightest)
+    verify(!blinked, "the glow dimmed and brightened again")
     compare(glow.box.opacity, 0)
     var rest = Popout.restRect(Popout.fromRect(popFrom), panel.popOutGrow)
     compare([glow.box.x, glow.box.y, glow.box.width, glow.box.height],
             [rest.x - glow.pad, rest.y - glow.pad, rest.w + glow.pad * 2, rest.h + glow.pad * 2])
+  }
+
+  // The glow lights around the popup's card the moment the pop-out starts,
+  // before the window is even placed (no window listed yet here).
+  function test_glow_lights_around_the_card_as_the_pop_out_starts() {
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    var glow = panel.testGlow
+    panel.open(popOutPayload(popFrom))
+    verify(glow.shown, "the glow waited for the window")
+    act.settled(function () { return glow.box.opacity > 0.99 }, "the glow never lit fully")
+    compare(Hyprland.dispatched, [], "the window was placed before the glow lit")
+    compare([glow.box.x, glow.box.y, glow.box.width, glow.box.height],
+            [popFrom.x - glow.pad, popFrom.y - glow.pad, popFrom.w + glow.pad * 2, popFrom.h + glow.pad * 2])
+  }
+
+  function test_glow_goes_when_the_window_never_comes() {
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    var glow = panel.testGlow
+    panel.open(popOutPayload(popFrom))
+    verify(glow.shown)
+    act.settled(function () { return !panel.popping }, "the pop-out never gave up")
+    act.settled(function () { return !glow.shown }, "the glow stayed lit with no window")
   }
 
   // Closed while it moves to rest: nothing more goes to the closed window
