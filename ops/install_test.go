@@ -81,6 +81,11 @@ exit 0`)
 	})
 	f.fake("pgrep", `echo "pgrep $*" >> "$FAKE_LOG"; [ -e "$FAKE_LOCKED" ]`)
 	f.fake("omarchy-restart-shell", `echo "omarchy-restart-shell" >> "$FAKE_LOG"`)
+	// hyprctl: record the call; configerrors prints FAKE_HYPR_ERRORS when it
+	// exists. The runner's own hyprctl would reach its live Hyprland.
+	f.fake("hyprctl", `echo "hyprctl $*" >> "$FAKE_LOG"
+[ "$1" = configerrors ] && [ -f "$FAKE_HYPR_ERRORS" ] && cat "$FAKE_HYPR_ERRORS"
+exit 0`)
 	// systemd-run: record the call; the unit does not run unless a test
 	// replaces this stub (see runDeferredUnit).
 	f.fake("systemd-run", `echo "systemd-run $1 $2 $3 $4" >> "$FAKE_LOG"`)
@@ -146,6 +151,7 @@ func (f *installFixture) make(target string) (string, error) {
 		"FAKE_LOG="+f.log,
 		"FAKE_ACTIVE="+filepath.Join(filepath.Dir(f.log), "active"),
 		"FAKE_LOCKED="+filepath.Join(filepath.Dir(f.log), "locked"),
+		"FAKE_HYPR_ERRORS="+filepath.Join(filepath.Dir(f.log), "hypr-errors"),
 		"HYPRLAND_INSTANCE_SIGNATURE=", // an ssh session has none; never inherit the developer's
 		// keep the build off the (empty) fixture HOME
 		"GOCACHE="+goEnv(f.t, "GOCACHE"),
@@ -314,6 +320,58 @@ func TestInstallerSaysKeybindAlreadyLoaded(t *testing.T) {
 	}
 	if got, _ := os.ReadFile(hl); !bytes.Equal(got, orig) { //nolint:gosec // fixture path under t.TempDir
 		t.Errorf("hyprland.lua was modified:\n%s", got)
+	}
+}
+
+// With hyprland.lua loading backstory.lua and a Hyprland to reach, install
+// reloads Hyprland and checks its config, as Omarchy's own changes do.
+func TestInstallerReloadsHyprlandWhenItLoadsBackstory(t *testing.T) {
+	f := newInstallFixture(t)
+	f.writeHyprland("require(\"hypr.backstory\")\n")
+	f.extra = append(f.extra, "HYPRLAND_INSTANCE_SIGNATURE=fixture")
+	out := f.mustMake("install")
+	t.Log(out)
+	for _, want := range []string{"hyprctl reload", "hyprctl configerrors"} {
+		if !strings.Contains(f.calls(), want) {
+			t.Errorf("install never ran %q:\n%s", want, f.calls())
+		}
+	}
+	if !strings.Contains(out, "reloaded Hyprland") || strings.Contains(out, "warning:") {
+		t.Errorf("install did not report a clean reload:\n%s", out)
+	}
+}
+
+// A config error after the reload is a warning: the install still succeeds.
+func TestInstallerWarnsOnHyprlandConfigErrors(t *testing.T) {
+	f := newInstallFixture(t)
+	f.writeHyprland("require(\"hypr.backstory\")\n")
+	f.extra = append(f.extra, "HYPRLAND_INSTANCE_SIGNATURE=fixture")
+	if err := os.WriteFile(filepath.Join(filepath.Dir(f.log), "hypr-errors"), []byte("backstory.lua:3: unexpected symbol\n"), 0o644); err != nil { //nolint:gosec // fixture path under t.TempDir
+		t.Fatal(err)
+	}
+	out := f.mustMake("install")
+	t.Log(out)
+	if !strings.Contains(out, "warning: Hyprland reports config errors after reloading:") || !strings.Contains(out, "backstory.lua:3: unexpected symbol") {
+		t.Errorf("install did not warn with Hyprland's config errors:\n%s", out)
+	}
+}
+
+// Without the require line, or with no Hyprland to reach, install leaves
+// Hyprland alone.
+func TestInstallerLeavesHyprlandUnreloadedWhenItCannotApply(t *testing.T) {
+	for name, tc := range map[string]struct{ lua, sig string }{
+		"not loaded":  {"require(\"hypr.other\")\n", "fixture"},
+		"no hyprland": {"require(\"hypr.backstory\")\n", ""},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := newInstallFixture(t)
+			f.writeHyprland(tc.lua)
+			f.extra = append(f.extra, "HYPRLAND_INSTANCE_SIGNATURE="+tc.sig)
+			out := f.mustMake("install")
+			if strings.Contains(f.calls(), "hyprctl") {
+				t.Errorf("install ran hyprctl:\n%s\n%s", f.calls(), out)
+			}
+		})
 	}
 }
 
