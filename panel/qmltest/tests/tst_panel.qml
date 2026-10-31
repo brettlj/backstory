@@ -283,6 +283,21 @@ TestCase {
             [rest.x - glow.pad, rest.y - glow.pad, rest.w + glow.pad * 2, rest.h + glow.pad * 2])
   }
 
+  // Closed while it moves to rest: nothing more goes to the closed window
+  // and the glow stops (found by review: the hand-back to no_anim and the
+  // glow outlived the window).
+  function test_closing_while_it_moves_stops_the_rest() {
+    listWindow(true, 1)
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    panel.open(popOutPayload(popFrom))
+    act.settled(function () { return Hyprland.dispatched.length >= 5 }, "the window never started to move")
+    panel.close()
+    var sent = Hyprland.dispatched.length
+    compare(panel.testGlow.shown, false, "the glow kept playing")
+    wait(1000)
+    compare(Hyprland.dispatched.length, sent, "still sent to the closed window: " + Hyprland.dispatched.slice(sent))
+  }
+
   function test_a_bad_from_opens_the_window_as_usual() {
     listWindow(true, 1)
     ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })

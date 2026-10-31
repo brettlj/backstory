@@ -46,6 +46,13 @@ OverlayWindow {
     anim.restart()
   }
 
+  // The window closed mid-flash.
+  function stop() {
+    anim.stop()
+    glowBox.opacity = 0
+    root.playing = false
+  }
+
   onContentRevealedChanged: if (root.contentRevealed && root.playing && !root.started) root.start()
 
   Item {

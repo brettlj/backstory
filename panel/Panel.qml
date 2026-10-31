@@ -131,6 +131,8 @@ Item {
     popPlace.stop()
     popReveal.stop()
     popMove.stop()
+    popAnimDone.stop()
+    glow.stop()
     root.popping = false
     root.cardRevealed = true
   }
