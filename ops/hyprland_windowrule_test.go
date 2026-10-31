@@ -126,6 +126,36 @@ func TestHyprlandWindowruleMatchesPanelClass(t *testing.T) {
 	}
 }
 
+// TestHyprlandWindowruleHidesThePopOutUntilPlaced: a pop-out opens the window
+// under Panel.qml's windowTitle plus "-popout", which the rule floats and
+// draws with no decorations, blur or animation, so nothing shows until the
+// window sits where the popup's card is (seen 2026-10-31: without it, the
+// border and glow showed for two frames at the window's usual place).
+func TestHyprlandWindowruleHidesThePopOutUntilPlaced(t *testing.T) {
+	qml, err := os.ReadFile("../panel/Panel.qml")
+	if err != nil {
+		t.Fatalf("read Panel.qml: %v", err)
+	}
+	m := regexp.MustCompile(`readonly property string windowTitle: "([^"]+)"`).FindSubmatch(qml)
+	if m == nil {
+		t.Fatal("Panel.qml declares no windowTitle")
+	}
+	raw, err := os.ReadFile("hyprland/backstory.lua")
+	if err != nil {
+		t.Fatalf("read backstory.lua: %v", err)
+	}
+	code := regexp.MustCompile(`(?m)--.*$`).ReplaceAllString(string(raw), "")
+	rule := regexp.MustCompile(`(?s)o\.window\(\{[^}]*title\s*=\s*"\^\(` + regexp.QuoteMeta(string(m[1])+"-popout") + `\)\$"\s*\},\s*\{([^}]*)\}\)`).FindStringSubmatch(code)
+	if rule == nil {
+		t.Fatalf("no rule for the pop-out title %q", string(m[1])+"-popout")
+	}
+	for _, want := range []string{`float\s*=\s*true`, `no_anim\s*=\s*true`, `decorate\s*=\s*false`, `no_blur\s*=\s*true`} {
+		if !regexp.MustCompile(want).MatchString(rule[1]) {
+			t.Errorf("the pop-out rule lacks %s:\n%s", want, rule[1])
+		}
+	}
+}
+
 // TestHyprlandWindowruleOpensWithoutAnimation: Hyprland does not animate the
 // panel window, as it does not animate Omarchy's own panels
 // (default/hypr/apps/omarchy-shell.lua sets no_anim for them). Those panels

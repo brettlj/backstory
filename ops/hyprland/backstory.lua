@@ -11,6 +11,17 @@
 
 local BACKSTORY = { class = "^(org\\.quickshell)$", title = "^(backstory)$" }
 
+-- A pop-out from the bar popup opens the window under this title, drawn with no
+-- decorations or blur, so it shows nothing until Panel.qml has placed it where
+-- the popup's card is; then it takes the title above. Static effects (float,
+-- size, move) match the title a window opens with, so this rule floats it.
+o.window({ class = "^(org\\.quickshell)$", title = "^(backstory-popout)$" }, {
+  float = true,
+  no_anim = true,
+  decorate = false,
+  no_blur = true,
+})
+
 o.window(BACKSTORY, {
   float = true,
   size = { 380, 640 },
