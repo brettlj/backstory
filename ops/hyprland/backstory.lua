@@ -24,8 +24,11 @@ o.window(BACKSTORY, {
 })
 
 -- Keybind: open the This Week window, focus it (bringing it to this workspace)
--- when open elsewhere, close it when it has focus (Panel.qml toggle). A click
--- on the bar widget opens its own popup.
+-- when open elsewhere, close it when it has focus. That is Panel.qml's own
+-- toggle, over its IPC target; the shell's `shell toggle` would hide an open
+-- window without asking it. With the window not loaded the target is missing,
+-- so the bind opens it through the shell. A click on the bar widget opens its
+-- own popup.
 -- Change BACKSTORY_BIND to taste; `hl` is Hyprland's own Lua global.
 local BACKSTORY_BIND = "CTRL + SHIFT + B"
-hl.bind(BACKSTORY_BIND, hl.dsp.exec_cmd("omarchy-shell shell toggle backstory.this-week '{}'"), { description = "Backstory This Week" })
+hl.bind(BACKSTORY_BIND, hl.dsp.exec_cmd("omarchy-shell backstory.this-week toggle >/dev/null 2>&1 || omarchy-shell shell summon backstory.this-week '{}'"), { description = "Backstory This Week" })
