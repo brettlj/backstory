@@ -404,6 +404,77 @@ TestCase {
 
   // j/k (and the arrows) move the highlight through Recent; the highlighted
   // row must stay in view, scrolling the card as it goes past either edge.
+  // ---- Snapshot and restore (the bar popup's pop-out into the window) ----
+  function reopen(data) {
+    panel.close()
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: JSON.stringify(data), stderr: "", exitCode: 0 })
+    panel.open("{}")
+  }
+
+  function test_snapshot_names_the_view_selection_and_scroll() {
+    open(longRecentPayload())
+    press(Qt.Key_Down)
+    press(Qt.Key_Down)
+    var snap = panel.view.snapshot()
+    compare(snap.view, "main")
+    compare(snap.selectedId, panel.view.selectedId)
+    compare(snap.scrollY, panel.testScroller.contentY)
+    panel.view.helpOpen = true
+    compare(panel.view.snapshot().view, "help")
+  }
+
+  function test_restore_keeps_the_selection_through_the_data_load() {
+    var data = longRecentPayload()
+    open(data)
+    var start = panel.view.selectedIndex
+    var want = start === 3 ? 2 : 3
+    panel.view.selectedIndex = want
+    var snap = JSON.parse(JSON.stringify(panel.view.snapshot()))
+    // The test harness answers a run at once, so mark a load in flight by
+    // hand: restore() must wait for it rather than select on stale rows.
+    panel.view.selectedIndex = start
+    panel.view.loading = true
+    panel.view.restore(snap)
+    compare(panel.view.selectedIndex, start, "restore selected before the data arrived")
+    panel.view.refresh()
+    act.settledEq(panel.view, "selectedIndex", want)
+  }
+
+  function test_restore_scrolls_back() {
+    var data = longRecentPayload()
+    open(data)
+    var scroller = panel.testScroller
+    scroller.contentY = Math.min(200, scroller.contentHeight - scroller.height)
+    var snap = JSON.parse(JSON.stringify(panel.view.snapshot()))
+    verify(snap.scrollY > 0, "fixture does not scroll")
+    reopen(data)
+    panel.testScroller.contentY = 0
+    panel.view.restore(snap)
+    act.settled(function () { return Math.abs(panel.testScroller.contentY - snap.scrollY) < 1 },
+      "never scrolled back to " + snap.scrollY)
+  }
+
+  function test_restore_opens_memory_for_that_project() {
+    open(payload())
+    panel.view.restore({ view: "memory", memory: { projectKey: "k-1", displayName: "kay", location: "/x/k", state: { history: false, expanded: [] } } })
+    compare(panel.view.memoryOpen, true)
+    compare(panel.view.memoryProjectKey, "k-1")
+    compare(panel.view.memoryDisplayName, "kay")
+    compare(panel.view.memoryLocation, "/x/k")
+  }
+
+  function test_restore_ignores_bad_values() {
+    open(payload())
+    panel.view.restore(null)
+    panel.view.restore([1, 2])
+    panel.view.restore({ view: "memory", memory: { projectKey: 7 }, selectedId: {}, expandedRows: "x", expandedGroups: [1, null], scrollY: "far" })
+    compare(panel.view.memoryOpen, false)
+    compare(panel.view.groupEditorOpen, false)
+    compare(panel.view.helpOpen, false)
+    compare(JSON.stringify(panel.view.expandedRows), "{}")
+    compare(JSON.stringify(panel.view.expandedGroups), "{}")
+  }
+
   function test_keyboard_selection_stays_in_view() {
     open(longRecentPayload())
     var scroller = panel.testScroller

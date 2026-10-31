@@ -135,6 +135,76 @@ Item {
     root.selectedIndex = idx
   }
 
+  // ---- Snapshot and restore: the bar popup's pop-out opens the window
+  // where you were. A snapshot names the view showing, Memory's project and
+  // its own state, the selection, the expanded rows and groups, and the
+  // scroll. restore() takes it from the summon payload, so it trusts nothing:
+  // wrong types and long strings are dropped, and a missing view is the main
+  // one. The selection waits for the next data load unless data is here.
+  property var pendingSelection: null
+  property real pendingScrollY: 0
+
+  function snapshot() {
+    var view = root.groupEditorOpen ? "groups" : root.memoryOpen ? "memory" : root.helpOpen ? "help" : "main"
+    var groups = []
+    for (var g in root.expandedGroups) if (root.expandedGroups[g]) groups.push(g)
+    return {
+      view: view,
+      memory: root.memoryOpen ? { projectKey: root.memoryProjectKey, displayName: root.memoryDisplayName,
+                                  location: root.memoryLocation, state: memoryPane.snapshot() } : null,
+      selectedId: root.selectedId,
+      selectedAgent: root.selectedAgent,
+      expandedRows: Object.keys(root.expandedRows),
+      expandedGroups: groups,
+      scrollY: scroller.contentY
+    }
+  }
+
+  function restore(state) {
+    if (!state || typeof state !== "object" || Array.isArray(state)) return
+    function text(v, max) { return typeof v === "string" && v.length <= max ? v : "" }
+    function keySet(v) {
+      var out = {}
+      if (!Array.isArray(v)) return out
+      for (var i = 0; i < v.length && i < 500; i++) if (text(v[i], 4096) !== "") out[v[i]] = true
+      return out
+    }
+    root.showMain()
+    root.expandedRows = keySet(state.expandedRows)
+    root.expandedGroups = keySet(state.expandedGroups)
+    root.pendingSelection = { id: text(state.selectedId, 8192), agent: text(state.selectedAgent, 256) }
+    root.pendingScrollY = typeof state.scrollY === "number" && isFinite(state.scrollY) ? Math.max(0, state.scrollY) : 0
+    var m = state.memory
+    var memoryKey = m && typeof m === "object" ? text(m.projectKey, 4096) : ""
+    if (state.view === "memory" && memoryKey !== "") {
+      memoryPane.restore(m.state && typeof m.state === "object" ? m.state : {})
+      root.openMemory(memoryKey, text(m.displayName, 1024) || memoryKey, text(m.location, 4096))
+    } else if (state.view === "groups") {
+      root.groupEditorOpen = true
+    } else if (state.view === "help") {
+      root.helpOpen = true
+    }
+    if (root.hasLoaded && !root.loading) root.applyPendingSelection()
+  }
+
+  // Selects the restored row (falling back to the here row when it is gone)
+  // and scrolls back to where the snapshot was, once the layout has settled.
+  function applyPendingSelection() {
+    var want = root.pendingSelection
+    root.pendingSelection = null
+    var idx = -1
+    for (var i = 0; i < root.navRows.length; i++) {
+      if (root.rowId(root.navRows[i].summary) === want.id && root.navRows[i].agent === want.agent) { idx = i; break }
+    }
+    if (idx < 0) root.resetSelection()
+    else root.selectedIndex = idx
+    var y = root.pendingScrollY
+    root.pendingScrollY = 0
+    Qt.callLater(function () {
+      scroller.contentY = Math.max(0, Math.min(y, scroller.contentHeight - scroller.height))
+    })
+  }
+
   function toggleGroup(group) {
     var next = Object.assign({}, root.expandedGroups)
     next[group] = !next[group]
@@ -297,7 +367,8 @@ Item {
         root.hasLoaded = true
         try {
           root.weekData = JSON.parse(text || "{}")
-          root.resetSelection()
+          if (root.pendingSelection) root.applyPendingSelection()
+          else root.resetSelection()
         } catch (e) {
           root.weekData = null
         }
