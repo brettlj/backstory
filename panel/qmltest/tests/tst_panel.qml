@@ -194,6 +194,55 @@ TestCase {
     }
   }
 
+  // ---- The shortcut (toggle) with the window open ----
+  function test_toggle_closes_the_window_when_it_has_focus() {
+    listWindow(true, 1)
+    openWith(readFixture(goldenUrl))
+    panel.toggle()
+    compare(panel.opened, false)
+    compare(Hyprland.dispatched, [])
+  }
+
+  function test_toggle_focuses_the_window_when_it_does_not_have_focus() {
+    listWindow(false, 1)
+    Hyprland.focusedWorkspace = { id: 1 }
+    openWith(readFixture(goldenUrl))
+    panel.toggle()
+    compare(panel.opened, true)
+    compare(Hyprland.dispatched, ['hl.dsp.focus({ window = "address:0xbb22" })'])
+  }
+
+  function test_toggle_brings_the_window_from_another_workspace() {
+    listWindow(false, 3)
+    Hyprland.focusedWorkspace = { id: 1 }
+    openWith(readFixture(goldenUrl))
+    panel.toggle()
+    compare(panel.opened, true)
+    compare(Hyprland.dispatched, ['hl.dsp.window.move({ workspace = "1", window = "address:0xbb22" })',
+                                  'hl.dsp.focus({ window = "address:0xbb22" })'])
+  }
+
+  // Switching to an empty workspace leaves the window marked activated (seen
+  // on Hyprland 0.56): it is not focused when it is not on your workspace.
+  function test_toggle_brings_a_window_still_marked_focused_from_another_workspace() {
+    listWindow(true, 4)
+    Hyprland.focusedWorkspace = { id: 3 }
+    openWith(readFixture(goldenUrl))
+    panel.toggle()
+    compare(panel.opened, true)
+    compare(Hyprland.dispatched, ['hl.dsp.window.move({ workspace = "3", window = "address:0xbb22" })',
+                                  'hl.dsp.focus({ window = "address:0xbb22" })'])
+  }
+
+  function test_toggle_does_not_move_a_pinned_window() {
+    listWindow(false, 3)
+    Hyprland.focusedWorkspace = { id: 1 }
+    openWith(readFixture(goldenUrl))
+    panel.togglePin()
+    panel.toggle()
+    compare(Hyprland.dispatched.slice(1), ['hl.dsp.focus({ window = "address:0xbb22" })'])
+  }
+
   function test_renders_golden_display_names() {
     openWith(readFixture(goldenUrl))
     var golden = JSON.parse(readFixture(goldenUrl))

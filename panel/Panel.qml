@@ -118,8 +118,21 @@ Item {
     root.opened = false
   }
 
+  // CTRL+SHIFT+B and the shell's toggle: open the window; close it when it
+  // has focus; otherwise focus it, first moving it to the workspace you are
+  // on when it is elsewhere and not pinned.
   function toggle() {
-    root.opened ? root.close() : root.open("{}")
+    if (!root.opened) { root.open("{}"); return }
+    var t = root.windowToplevel()
+    var a = root.windowAddress(t)
+    if (a === "") { root.close(); return }
+    var ws = Hyprland.focusedWorkspace
+    var elsewhere = ws && ws.id >= 1 && t.workspace && t.workspace.id !== ws.id
+    // Hyprland leaves `activated` set after you switch to an empty
+    // workspace, so a window elsewhere does not count as focused.
+    if (t.activated && !elsewhere) { root.close(); return }
+    if (elsewhere && !root.pinned) Hyprland.dispatch(Launchers.moveWindowDispatch(a, ws.id))
+    Hyprland.dispatch(Launchers.focusWindowDispatch(a))
   }
 
   IpcHandler {
