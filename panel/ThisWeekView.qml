@@ -47,8 +47,8 @@ Item {
 
   // The content's natural height, padding included; the host sizes to it.
   implicitHeight: contentColumn.implicitHeight + Style.spacing.panelPadding
-    + (footer.visible ? root.footerGap + footer.implicitHeight + root.footerBottomMargin : Style.spacing.panelPadding)
-  // The key hints sit in a fixed footer under the scrolling content.
+    + root.footerGap + footer.implicitHeight + root.footerBottomMargin
+  // The key hints sit in a fixed footer under the scrolling content, in every view.
   readonly property real footerGap: Style.spacing.labelGap * 2
   readonly property real footerBottomMargin: Style.space(12)
   readonly property Item scrollArea: scroller
@@ -100,7 +100,9 @@ Item {
   readonly property string heroStatus: root.attentionItems.length > 0
     ? root.attentionItems.length + (root.attentionItems.length === 1 ? " needs you" : " need you")
     : root.weekTotals.projects + " projects \u00b7 " + root.weekTotals.sessions + " sessions this week"
-  readonly property string footerHint: "j/k move \u00b7 \u2192 agents \u00b7 \u2190 fold \u00b7 Enter continue \u00b7 t terminal \u00b7 m memory \u00b7 ? help \u00b7 r refresh \u00b7 Esc close"
+  readonly property string mainFooterHint: "j/k move \u00b7 \u2192 agents \u00b7 \u2190 fold \u00b7 Enter continue \u00b7 t terminal \u00b7 m memory \u00b7 ? help \u00b7 r refresh \u00b7 Esc close"
+  readonly property string footerHint: root.helpOpen ? "u or ? back \u00b7 Esc close"
+    : (root.groupEditorOpen || root.memoryOpen) ? "u back \u00b7 Esc close" : root.mainFooterHint
 
   // Hover moves the one selection the keyboard uses (no second highlight).
   function selectRow(summary, agent) {
@@ -299,11 +301,11 @@ Item {
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.top: parent.top
-    anchors.bottom: footer.visible ? footer.top : parent.bottom
+    anchors.bottom: footer.top
     anchors.leftMargin: Style.spacing.panelPadding
     anchors.rightMargin: Style.spacing.panelPadding
     anchors.topMargin: Style.spacing.panelPadding
-    anchors.bottomMargin: footer.visible ? root.footerGap : Style.spacing.panelPadding
+    anchors.bottomMargin: root.footerGap
     contentWidth: width
     contentHeight: contentColumn.implicitHeight
     clip: true
@@ -461,7 +463,6 @@ Item {
   Text {
     id: footer
     objectName: "footerHint"
-    visible: body.visible
     anchors.left: parent.left
     anchors.right: parent.right
     anchors.bottom: parent.bottom

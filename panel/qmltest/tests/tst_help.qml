@@ -126,6 +126,17 @@ TestCase {
     return TestUtil.findAll(panel.testContentItem, function (n) { return n.visible && n.strength !== undefined })
   }
 
+  function footerText() {
+    var n = TestUtil.findFirst(panel.testContentItem, function (node) { return node.objectName === "footerHint" })
+    return n === null ? null : n.text
+  }
+
+  function test_footer_lists_helps_keys() {
+    press(Qt.Key_Question)
+    act.settledEq(panel.view, "helpOpen", true)
+    act.settled(function () { return footerText() === "u or ? back · Esc close" }, "footer never listed Help's keys; got " + footerText())
+  }
+
   function test_u_goes_back_to_the_main_view() {
     press(Qt.Key_Question)
     act.settledEq(panel.view, "helpOpen", true)

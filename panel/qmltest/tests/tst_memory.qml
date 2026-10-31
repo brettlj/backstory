@@ -313,6 +313,16 @@ TestCase {
     return TestUtil.findAll(panel.testContentItem, function (n) { return n.visible && n.strength !== undefined })
   }
 
+  function footerText() {
+    var n = TestUtil.findFirst(panel.testContentItem, function (node) { return node.objectName === "footerHint" })
+    return n === null ? null : n.text
+  }
+
+  function test_footer_lists_memorys_keys() {
+    openMemory(readFixture(recordsGolden))
+    compare(footerText(), "u back · Esc close")
+  }
+
   function test_u_goes_back_to_the_main_view() {
     openMemory(readFixture(recordsGolden))
     panel.testKeyItem.forceActiveFocus()

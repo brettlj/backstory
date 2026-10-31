@@ -161,6 +161,16 @@ TestCase {
     act.moveAway(panel.testContentItem)
   }
 
+  function footerText() {
+    var n = TestUtil.findFirst(panel.testContentItem, function (node) { return node.objectName === "footerHint" })
+    return n === null ? null : n.text
+  }
+
+  function test_footer_lists_the_editors_keys() {
+    openGroupEditor()
+    compare(footerText(), "u back · Esc close")
+  }
+
   function test_u_goes_back_to_the_main_view() {
     openGroupEditor()
     panel.testKeyItem.forceActiveFocus()
