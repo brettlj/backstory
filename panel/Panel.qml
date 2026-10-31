@@ -207,7 +207,7 @@ Item {
     var all = Hyprland.toplevels.values
     for (var i = 0; i < all.length; i++) {
       var t = all[i]
-      if ((t.title === root.windowTitle || t.title === root.popOutTitle) && t.wayland && t.wayland.appId === "org.quickshell") return t
+      if (Launchers.isPanelWindow(t)) return t
     }
     return null
   }
@@ -270,6 +270,14 @@ Item {
     Hyprland.dispatch(Launchers.focusWindowDispatch(a))
   }
 
+  // The bar icon's click with the window open: bring it here and focus it,
+  // never close it; "closed" when there is no window.
+  function focusWindow() {
+    if (!root.opened) return "closed"
+    root.bringToFront()
+    return "ok"
+  }
+
   // Flashes around the window as it moves to rest after a pop-out.
   PopOutGlow { id: glow }
 
@@ -279,6 +287,7 @@ Item {
     function close(): string { root.close(); return "ok" }
     function toggle(): string { root.toggle(); return "ok" }
     function toggleIfOpen(): string { return root.toggleIfOpen() }
+    function focus(): string { return root.focusWindow() }
     function refresh(): string { view.refresh(); return "ok" }
     function ping(): string { return "ok" }
   }

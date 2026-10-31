@@ -2,6 +2,7 @@ import QtQuick
 import QtTest
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import "testutil.js" as TestUtil
 import "../../js/launchers.js" as Launchers
 
@@ -41,6 +42,7 @@ TestCase {
   function start(data, defaultAgent) {
     ProcessController.reset()
     Quickshell.reset()
+    Hyprland.reset()
     ProcessController.respond(Launchers.thisWeekCommand(), { stdout: JSON.stringify(data), stderr: "", exitCode: 0 })
     ProcessController.respond(Launchers.defaultAgentCommand(), { stdout: defaultAgent === undefined ? "claude\n" : defaultAgent, stderr: "", exitCode: 0 })
     loader = barWidgetComponent.createObject(testCase)
@@ -133,6 +135,27 @@ TestCase {
     verify(typeof content.handleKey === "function", "popup content has no key handler")
     compare(Quickshell.execDetachedCalls.length, 0, "a left click ran a command: " + JSON.stringify(Quickshell.execDetachedCalls))
     act.clickWhenReady(widget, { button: Qt.LeftButton, desc: "bar widget again", until: function () { return !widget.opened } })
+  }
+
+  // With the window open, the icon focuses it instead of opening the popup,
+  // so the two never show together; a second click focuses it again.
+  function test_left_click_focuses_the_open_window_instead_of_the_popup() {
+    var widget = start(fixture())
+    Hyprland.toplevels = { values: [{ address: "55aa", title: "backstory", activated: false, workspace: { id: 2 }, wayland: { appId: "org.quickshell" } }] }
+    for (var i = 0; i < 2; i++) {
+      act.clickWhenReady(widget, { button: Qt.LeftButton, desc: "bar widget", until: function () { return Quickshell.execDetachedCalls.length === i + 1 } })
+      compare(JSON.stringify(Quickshell.execDetachedCalls[i].command), JSON.stringify(Launchers.windowFocusCommand()))
+    }
+    wait(50)
+    compare(widget.opened, false, "the popup opened beside the window")
+  }
+
+  // Another app's window titled "backstory" is not ours.
+  function test_left_click_opens_the_popup_beside_another_apps_backstory_window() {
+    var widget = start(fixture())
+    Hyprland.toplevels = { values: [{ address: "55aa", title: "backstory", activated: false, workspace: { id: 2 }, wayland: { appId: "org.other" } }] }
+    openPopup(widget)
+    compare(Quickshell.execDetachedCalls.length, 0)
   }
 
   function test_esc_in_the_popup_closes_it() {

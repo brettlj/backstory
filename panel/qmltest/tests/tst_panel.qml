@@ -393,6 +393,36 @@ TestCase {
     compare(Hyprland.dispatched.slice(1), ['hl.dsp.focus({ window = "address:0xbb22" })'])
   }
 
+  // ---- The bar icon with the window open: focus, never close ----
+  // The bar icon knows the window by Launchers' titles.
+  function test_launchers_name_the_window_as_panel_does() {
+    compare(Launchers.WINDOW_TITLE, panel.windowTitle)
+    compare(Launchers.WINDOW_POPOUT_TITLE, panel.popOutTitle)
+  }
+
+  function test_focus_keeps_a_focused_window_open() {
+    listWindow(true, 1)
+    Hyprland.focusedWorkspace = { id: 1 }
+    openWith(readFixture(goldenUrl))
+    compare(panel.focusWindow(), "ok")
+    compare(panel.opened, true)
+    compare(Hyprland.dispatched, ['hl.dsp.focus({ window = "address:0xbb22" })'])
+  }
+
+  function test_focus_brings_the_window_from_another_workspace() {
+    listWindow(false, 3)
+    Hyprland.focusedWorkspace = { id: 1 }
+    openWith(readFixture(goldenUrl))
+    panel.focusWindow()
+    compare(Hyprland.dispatched, ['hl.dsp.window.move({ workspace = "1", window = "address:0xbb22" })',
+                                  'hl.dsp.focus({ window = "address:0xbb22" })'])
+  }
+
+  function test_focus_on_a_closed_window_says_so() {
+    compare(panel.focusWindow(), "closed")
+    compare(panel.opened, false)
+  }
+
   function test_renders_golden_display_names() {
     openWith(readFixture(goldenUrl))
     var golden = JSON.parse(readFixture(goldenUrl))

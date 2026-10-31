@@ -228,6 +228,25 @@ function popupCloseCommand() {
   return ["omarchy-shell", "backstory.this-week.popup", "close"]
 }
 
+// The window (Panel.qml): its title, the title it maps under during a
+// pop-out, and Quickshell's app id, as ops/hyprland/backstory.lua matches it.
+// Panel.qml's windowTitle is the source (the ops tests read it there);
+// tst_panel.qml checks these match it.
+var WINDOW_TITLE = "backstory"
+var WINDOW_POPOUT_TITLE = WINDOW_TITLE + "-popout"
+
+// isPanelWindow: whether a Hyprland toplevel is the window.
+function isPanelWindow(t) {
+  return !!t && (t.title === WINDOW_TITLE || t.title === WINDOW_POPOUT_TITLE)
+    && !!t.wayland && t.wayland.appId === "org.quickshell"
+}
+
+// windowFocusCommand: the bar icon, while the window is open, focuses it
+// (Panel.qml's IPC target) instead of opening the popup beside it.
+function windowFocusCommand() {
+  return ["omarchy-shell", "backstory.this-week", "focus"]
+}
+
 function focusWindowFallbackCommand(addr) {
   return ["hyprctl", "dispatch", "focuswindow", "address:" + addr]
 }

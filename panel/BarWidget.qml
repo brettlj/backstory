@@ -66,6 +66,12 @@ Ui.Panel {
     Quickshell.execDetached(Launchers.windowSummonCommand(JSON.stringify(snapshot)))
   }
 
+  // The window is open: the popup and the window never show together, so a
+  // left click focuses the window instead (Panel.qml focusWindow()).
+  function windowOpen() {
+    return Hyprland.toplevels.values.some(function (t) { return Launchers.isPanelWindow(t) })
+  }
+
   function closeAfterPopOut() {
     popOutGiveUp.stop()
     root.close()
@@ -159,6 +165,8 @@ Ui.Panel {
         continueAction.continueOn(root.hereProject)
       } else if (mouseButton === Qt.MiddleButton) {
         root.refresh()
+      } else if (root.windowOpen()) {
+        Quickshell.execDetached(Launchers.windowFocusCommand())
       } else {
         root.toggle()
         root.refresh()
