@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import Quickshell.Io
 import qs.Ui
 import qs.Ui as Ui
@@ -48,6 +49,13 @@ Ui.Panel {
 
   // Test-only handle onto the popup (its content is built on first open).
   readonly property var testPopup: popup
+
+  // The popup's pop-out button: close the popup and open the window, which
+  // you can move and which stays open when other bar panels open.
+  function popOut() {
+    root.close()
+    Quickshell.execDetached(Launchers.windowSummonCommand())
+  }
 
   function refresh() {
     continueAction.refreshDefaultAgent()
@@ -160,7 +168,9 @@ Ui.Panel {
         edge: 0
         footerBottomMargin: 0
         active: root.opened
+        canPopOut: true
         onCloseRequested: root.close()
+        onPopOutRequested: root.popOut()
       }
     }
   }

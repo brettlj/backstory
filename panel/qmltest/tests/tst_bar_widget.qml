@@ -142,6 +142,20 @@ TestCase {
     compare(widget.opened, false)
   }
 
+  function test_pop_out_closes_the_popup_and_summons_the_window() {
+    var widget = start(fixture())
+    var content = openPopup(widget)
+    // The popup's content is outside the test scene, so the button can't be
+    // clicked here; tst_panel's test_pop_out_button_asks_the_host clicks it.
+    var view = TestUtil.findFirst(content, function (n) { return n.canPopOut !== undefined })
+    verify(view !== null && view.canPopOut === true, "the popup's view offers no pop-out")
+    verify(TestUtil.findFirst(content, function (n) { return n.tooltipText === "Pop out" }) !== null, "no pop-out button in the popup")
+    view.popOutRequested()
+    compare(widget.opened, false)
+    var run = act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
+    compare(JSON.stringify(run.command), JSON.stringify(["omarchy-shell", "shell", "summon", "backstory.this-week", "{}"]))
+  }
+
   function test_tab_moves_to_the_next_bar_panel() {
     var widget = start(fixture())
     widget.bar = fakeBar(26)

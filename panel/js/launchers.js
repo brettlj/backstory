@@ -33,6 +33,13 @@
 //     (Panel.qml) still answers the "panel" kind contract's open()/close()/
 //     toggle() the host may also call directly.
 
+// windowSummonCommand opens the plugin's window (its "panel" kind): the
+// shell routes summon to the panel loader for a plugin that is also a bar
+// widget, so this never reopens the bar popup.
+function windowSummonCommand() {
+  return ["omarchy-shell", "shell", "summon", "backstory.this-week", "{}"]
+}
+
 function thisWeekCommand() {
   return ["backstory", "this-week", "--json", "--here", "auto"]
 }
