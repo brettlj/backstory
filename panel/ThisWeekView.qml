@@ -319,73 +319,29 @@ Item {
         width: parent.width
         spacing: Style.spacing.panelGap
 
-        Item {
-          width: parent.width
-          height: Math.max(hero.implicitHeight, closeButton.implicitHeight)
+        HeroHeader {
+          glyph: root.scrollGlyph
+          title: "Backstory"
+          status: root.heroStatus
+          statusShown: !root.waitingForFirstData
+          statusUrgent: root.attentionItems.length > 0
 
-          Row {
-            id: hero
-            anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: Style.space(14)
-
-            Text {
-              textFormat: Text.PlainText
-              text: root.scrollGlyph
-              font.family: Style.font.family
-              font.pixelSize: Style.font.display
-              color: Commons.Color.popups.text
-              anchors.verticalCenter: parent.verticalCenter
-            }
-
-            Column {
-              anchors.verticalCenter: parent.verticalCenter
-              spacing: Style.space(2)
-
-              Text {
-                textFormat: Text.PlainText
-                text: "Backstory"
-                font.family: Style.font.family
-                font.pixelSize: Style.font.title
-                font.bold: true
-                color: Commons.Color.popups.text
-              }
-              Text {
-                objectName: "heroStatus"
-                textFormat: Text.PlainText
-                text: root.heroStatus
-                visible: !root.waitingForFirstData
-                font.family: Style.font.family
-                font.pixelSize: Style.font.caption
-                font.bold: true
-                font.letterSpacing: 1.2
-                font.capitalization: Font.AllUppercase
-                color: root.attentionItems.length > 0 ? Commons.Color.urgent : Qt.darker(Commons.Color.popups.text, 1.4)
-              }
-            }
+          PanelActionButton {
+            id: groupsButton
+            iconText: Glyphs.gear()
+            tooltipText: "Groups"
+            foreground: Commons.Color.popups.text
+            hoverColor: Commons.Color.accent
+            onClicked: root.groupEditorOpen = !root.groupEditorOpen
           }
 
-          Row {
-            anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
-
-            PanelActionButton {
-              id: groupsButton
-              iconText: Glyphs.gear()
-              tooltipText: "Groups"
-              foreground: Commons.Color.popups.text
-              hoverColor: Commons.Color.accent
-              onClicked: root.groupEditorOpen = !root.groupEditorOpen
-            }
-
-            PanelActionButton {
-              id: closeButton
-              iconText: Glyphs.close()
-              tooltipText: "Close"
-              foreground: Commons.Color.popups.text
-              hoverColor: Commons.Color.urgent
-              onClicked: root.closeRequested()
-            }
+          PanelActionButton {
+            id: closeButton
+            iconText: Glyphs.close()
+            tooltipText: "Close"
+            foreground: Commons.Color.popups.text
+            hoverColor: Commons.Color.urgent
+            onClicked: root.closeRequested()
           }
         }
 
