@@ -8,7 +8,7 @@ GO      ?= go
 # with qt5-declarative installed is Qt 5's and won't load the panel.
 QMLTESTRUNNER ?= $(firstword $(wildcard /usr/lib/qt6/bin/qmltestrunner /usr/lib64/qt6/bin/qmltestrunner) qmltestrunner)
 
-.PHONY: check-go install uninstall build fmt-check vet lint test integration panel-qml-test check hygiene-check release-check clean
+.PHONY: check-go install uninstall build fmt-check vet lint test integration panel-qml-test check hygiene-check vulncheck release-check clean
 
 build:
 	CGO_ENABLED=0 $(GO) build -trimpath -ldflags "-s -w -X $(MODULE)/internal/version.Version=$(VERSION)" -o $(BIN) ./cmd/backstory
@@ -74,6 +74,13 @@ hygiene-check:
 	./ops/hygiene-check.sh
 
 check: hygiene-check fmt-check vet lint test panel-qml-test
+
+# vulncheck scans the module's dependencies and call graph for known
+# vulnerabilities. It needs network for the vuln DB, so it is NOT part of
+# `make check`; CI runs it as its own job.
+GOVULNCHECK_VERSION ?= v1.9.0
+vulncheck:
+	$(GO) run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
 
 # release-check validates a version is ready to tag: semver, a CHANGELOG.md
 # section, and a matching ops/aur/PKGBUILD pkgver. It builds nothing and
