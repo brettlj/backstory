@@ -32,10 +32,10 @@ opens the store directly (PLAN.md §Phase 4 "Human look", decision
   (enabled only once both are chosen) sets it. A failed `group set|clear`
   shows its stderr in the editor instead of failing silently. The panel
   refetches `this-week` after every change so rows regroup immediately.
-- **Bar widget** — a small glyph you can place in the Omarchy bar; click
-  it to open/close the panel (see Install below). It shares its open/
-  closed state with the panel itself, so toggling from either place keeps
-  the other in sync.
+- **Bar widget** — the scroll glyph and the project you are in, which you
+  can place in the Omarchy bar. A click opens a native Omarchy popup under
+  it with the same view as the window (see "Open it" below); its pop-out
+  button opens the window where you were.
 
 A group is for two projects that are really one body of work — e.g.
 `~/projects/mandrel` and `~/projects/ra-runtime`, where a session in either
@@ -131,9 +131,16 @@ Two things Brian hit on his own desk upgrading an already-installed copy:
 
 ## Open it
 
-Click the bar glyph. It toggles the panel; clicking it again, or the
-panel's own close button, closes it. The panel can also be driven without
-the bar widget, e.g. for a keybinding:
+Two surfaces show the same view (`ThisWeekView.qml`):
+
+- **The bar popup** (`BarWidget.qml`): a click on the bar glyph opens a
+  `qs.Ui` `KeyboardPanel` under it, as Omarchy's own bar panels do. `Esc`
+  or a click elsewhere closes it, `Tab` moves to the next bar panel, and
+  its pop-out button opens the window at a snapshot of the popup's view.
+- **The window** (`Panel.qml`, the "panel" kind): a floating window you
+  can move. The shell's summon/toggle/hide reach the window, not the
+  popup, because the shell sends them to the panel loader for a plugin
+  that is both kinds:
 
 ```sh
 omarchy-shell shell summon backstory.this-week '{}'
@@ -141,11 +148,13 @@ omarchy-shell shell toggle backstory.this-week '{}'   # summon if closed, hide i
 omarchy-shell shell hide backstory.this-week
 ```
 
-Bind `omarchy-shell shell toggle backstory.this-week '{}'` to a keybinding
-(Hyprland `bindd`) for one-key access, the same way Omarchy's own OSD and
-menu plugins are bound — the bar widget's own click runs this exact command
-(`js/launchers.js`'s `barToggleCommand()`), so the bar widget and a
-keybinding both drive the same host toggle and never fall out of sync.
+`CTRL+SHIFT+B` (`ops/hyprland/backstory.lua`) runs the toggle. A summon's
+payload may be a snapshot from `ThisWeekView.snapshot()`, which the window
+restores (the pop-out sends one); `{}` opens it as it was.
+
+While the popup is open, a click on another bar icon only closes it: the
+shell gives an add-on's widget a bar API that sees only its own buttons, so
+the popup cannot pass the click on (Omarchy `1702cf0b`).
 
 ## Testing
 

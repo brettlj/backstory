@@ -196,21 +196,27 @@ memory yourself with `backstory recall` and `backstory records`
 
 ## 5. The panel
 
-The panel is a pop-up window in the Omarchy desktop that shows your week at a glance and lets
-you jump back into any project.
+The panel shows your week at a glance and lets you jump back into any project. It comes two
+ways, with the same content:
 
-### Opening and closing
+- **The window**: press **`CTRL + SHIFT + B`**. It's an ordinary window you can move, and it
+  stays open while you use other bar panels. Press the key again, click its close button, or
+  press **`Esc`** to close it.
+- **The bar popup**: click the Backstory icon in the top bar (if you added it; see
+  `panel/README.md`). It opens under the bar like Omarchy's own panels. **`Esc`**, a click
+  elsewhere, or a second click on the icon closes it, and **`Tab`** / **`Shift + Tab`** move to
+  the next bar panel. Its **pop-out** button (next to the gear) closes the popup and opens the
+  window where you were: the same view, project, selection and scroll, including an open
+  Memory view and its expanded records.
 
-- Press **`CTRL + SHIFT + B`**, or
-- click the Backstory icon in the top bar (if you added it; see `panel/README.md`).
-
-Press the same key, click the icon again, or press **`Esc`** to close it.
+Clicking another bar icon while the popup is open closes the popup; click again to open the
+other panel. This is how Omarchy treats every add-on's popup for now.
 
 ### What's on it
 
 From top to bottom:
 
-- **Header**: "Backstory" and a one-line summary of the week.
+- **Header**: "Backstory" with what needs you, or else this week's projects and sessions.
 - **Here card**: the project you're in right now (the folder of your focused terminal), with
   **Continue**, **Terminal** and **Memory** buttons.
 - **NEEDS YOU**: only shown when something needs a look. It can show:
@@ -239,8 +245,12 @@ From top to bottom:
 | See what's saved for that project | **Memory** | `m` |
 | Refresh | | `r` |
 | Help (lists the agent tools too) | | `?` |
-| Bigger / smaller / reset text | | `Ctrl` + `+` / `Ctrl` + `-` / `Ctrl` + `0` |
+| Back to the main view from Memory, Groups or Help | back button | `u` |
+| Bigger / smaller / reset text (window only) | | `Ctrl` + `+` / `Ctrl` + `-` / `Ctrl` + `0` |
+| Open the window where you were (bar popup only) | pop-out button | |
 | Close | close button | `Esc` |
+
+The line at the bottom lists the keys for the view you're in.
 
 ### The Memory view
 
@@ -256,7 +266,7 @@ if it's not current (for example possibly stale or superseded).
 - **Forget activity and saved records** at the bottom erases what Backstory recorded for this
   project. Choose **Last hour**, **Today** or **Everything here**. It first shows how many
   sessions, events and records would go, and only deletes after you confirm.
-- **Back** returns to the main view.
+- **Back**, or **`u`**, returns to the main view.
 
 ### Groups
 
