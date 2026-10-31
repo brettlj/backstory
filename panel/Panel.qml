@@ -105,7 +105,8 @@ Item {
   property bool cardRevealed: true
   property var popFrom: null
   property string popAddr: ""
-  property real popOutGrow: 0
+  // The grab handle's height: the window grows by it on the way to rest.
+  readonly property real popOutGrow: handle.fullHeight
   // The popup's close fade (KeyboardPanel's 120 ms), before the move, so the
   // fading popup is not left behind.
   readonly property int popOutHoldMs: 140
@@ -179,6 +180,7 @@ Item {
       var a = root.popAddr
       var rest = Popout.restRect(root.popFrom, root.popOutGrow)
       Hyprland.dispatch(Launchers.windowAnimDispatch(a, true))
+      handle.shown = true
       Hyprland.dispatch(Launchers.resizeWindowDispatch(a, rest.w, rest.h))
       Hyprland.dispatch(Launchers.moveWindowToDispatch(a, rest.x, rest.y))
       popAnimDone.start()
@@ -218,6 +220,7 @@ Item {
 
   function close() {
     root.stopPopOut()
+    handle.shown = false
     root.opened = false
   }
 
@@ -310,10 +313,17 @@ Item {
       // Everything scales as one: the view is laid out at card size / zoom
       // and scaled up by zoom, so text, rows and spacing grow together and
       // the extra height scrolls in the view's Flickable.
+      // Only after a pop-out; it grows in as the window does.
+      GrabHandle {
+        id: handle
+        width: card.width
+      }
+
       ThisWeekView {
         id: view
+        y: handle.height
         width: card.width / root.zoom
-        height: card.height / root.zoom
+        height: (card.height - handle.height) / root.zoom
         scale: root.zoom
         transformOrigin: Item.TopLeft
         active: root.opened

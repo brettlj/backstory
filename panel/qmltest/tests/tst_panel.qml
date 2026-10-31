@@ -242,6 +242,28 @@ TestCase {
     compare(Hyprland.dispatched[5], Launchers.windowAnimDispatch(a, false))
   }
 
+  function handleBar() {
+    return TestUtil.findFirst(panel.testContentItem, function (n) { return n.objectName === "grabHandleBar" })
+  }
+
+  // The grab handle comes with a pop-out only, growing in as the window
+  // grows by its height, and goes when the window closes.
+  function test_grab_handle_grows_in_after_a_pop_out_only() {
+    listWindow(true, 1)
+    openWith(readFixture(goldenUrl))
+    compare(handleBar(), null, "a plain open showed the grab handle")
+    panel.close()
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    panel.open(popOutPayload(popFrom))
+    act.settled(function () { return handleBar() !== null }, "the grab handle never came")
+    var strip = handleBar().parent
+    act.settledEq(strip, "height", strip.fullHeight)
+    compare(panel.popOutGrow, strip.fullHeight, "the window does not grow by the handle's height")
+    panel.close()
+    panel.open("{}")
+    compare(handleBar(), null, "the grab handle stayed after the window closed")
+  }
+
   function test_a_bad_from_opens_the_window_as_usual() {
     listWindow(true, 1)
     ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
