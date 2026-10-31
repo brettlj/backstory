@@ -98,7 +98,7 @@ Item {
   readonly property var weekTotals: Derive.weekTotals(root.weekDays)
   // The hero's status line: what needs you, otherwise this week's count.
   readonly property string heroStatus: root.attentionItems.length > 0
-    ? root.attentionItems.length + " need you"
+    ? root.attentionItems.length + (root.attentionItems.length === 1 ? " needs you" : " need you")
     : root.weekTotals.projects + " projects \u00b7 " + root.weekTotals.sessions + " sessions this week"
   readonly property string footerHint: "j/k move \u00b7 \u2192 agents \u00b7 \u2190 fold \u00b7 Enter continue \u00b7 t terminal \u00b7 m memory \u00b7 ? help \u00b7 r refresh \u00b7 Esc close"
 

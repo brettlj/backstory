@@ -509,6 +509,25 @@ TestCase {
     compare(textContaining("cargo test failed"), "", "the raw detail belongs in the Details tooltip, not the panel")
   }
 
+  function staleHandoff(key) {
+    return { kind: "possibly-stale-handoff", project_key: key, reason: key + ": handoff possibly stale", handoff_id: "h-" + key, evidence_ids: ["7"] }
+  }
+
+  function heroStatusText() {
+    var n = TestUtil.findFirst(panel.testContentItem, function (n) { return n.objectName === "heroStatus" })
+    return n ? n.text : null
+  }
+
+  function test_hero_status_counts_what_needs_you_in_number() {
+    open(payload(function (d) { d.attention = [staleHandoff("foo")] }))
+    compare(heroStatusText(), "1 needs you")
+  }
+
+  function test_hero_status_plural_for_more_than_one() {
+    open(payload(function (d) { d.attention = [staleHandoff("foo"), staleHandoff("bar")] }))
+    compare(heroStatusText(), "2 need you")
+  }
+
   function test_k_and_arrows_move_and_clamp() {
     open(payload())
     press(Qt.Key_Down)
