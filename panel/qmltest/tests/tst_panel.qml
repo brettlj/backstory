@@ -84,6 +84,30 @@ TestCase {
     act.quiescent(function () { return [TestUtil.collectVisibleTexts(panel.testContentItem), panel.testImplicitHeight] }, "panel never finished rendering")
   }
 
+  function test_open_with_a_snapshot_restores_it() {
+    openWith(readFixture(goldenUrl))
+    panel.close()
+    panel.open(JSON.stringify({ view: "help" }))
+    compare(panel.opened, true)
+    compare(panel.view.helpOpen, true)
+  }
+
+  function test_plain_open_keeps_the_view_showing() {
+    openWith(readFixture(goldenUrl))
+    panel.view.helpOpen = true
+    panel.open("{}")
+    compare(panel.view.helpOpen, true)
+  }
+
+  function test_open_with_an_unreadable_payload_opens_the_main_view() {
+    panel.open("{not json")
+    compare(panel.opened, true)
+    compare(panel.view.helpOpen || panel.view.memoryOpen || panel.view.groupEditorOpen, false)
+    panel.close()
+    panel.open(JSON.stringify({ view: "help", pad: new Array(70000).join("x") }))
+    compare(panel.view.helpOpen, false, "an oversized payload was read")
+  }
+
   function popOutButton() {
     return TestUtil.findFirst(panel.testContentItem, function (n) { return n.tooltipText === "Pop out" })
   }

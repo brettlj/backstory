@@ -70,8 +70,17 @@ Item {
   // tst_panel_window.qml pin the two together).
   readonly property string windowTitle: "backstory"
 
+  // A summon's payload may carry a view snapshot (the bar popup's pop-out:
+  // ThisWeekView.snapshot()); the window then opens where the popup was. A
+  // plain "{}" (CTRL+SHIFT+B, IPC) opens as it always has. Any process can
+  // send a payload, so an oversized or unreadable one is ignored.
   function open(payloadJson) {
     root.opened = true
+    var state = null
+    if (typeof payloadJson === "string" && payloadJson.length <= 65536) {
+      try { state = JSON.parse(payloadJson) } catch (e) { state = null }
+    }
+    if (state && typeof state === "object" && state.view !== undefined) view.restore(state)
   }
 
   function close() {
