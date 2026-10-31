@@ -34,9 +34,13 @@ QtObject {
 
   readonly property QtObject bar: QtObject {
     readonly property int sizeHorizontal: style.testFontPx(26)
+    readonly property int iconSlot: style.testFontPx(27)
+    readonly property int iconFont: style.testFontPx(13)
+    readonly property int iconCanvas: style.testFontPx(16)
   }
 
   readonly property QtObject spacing: QtObject {
+    readonly property int hairline: style.space(1)
     readonly property int panelPadding: style.space(12)
     readonly property int labelGap: style.space(6)
     readonly property int rowGap: style.space(8)

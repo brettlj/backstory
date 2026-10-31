@@ -8,7 +8,6 @@ import "js/model.js" as Model
 import "js/derive.js" as Derive
 import "js/launchers.js" as Launchers
 import "js/format.js" as Format
-import "js/glyphs.js" as Glyphs
 
 // The "bar-widget" entry point (manifest.json "kinds": ["panel",
 // "bar-widget"], round 2 defect B: "Nothing on screen opens the panel; ...
@@ -47,8 +46,13 @@ Item {
   readonly property var hereProject: root.payload ? Derive.hereSummary(root.payload) : null
   readonly property string hereName: root.hereData ? Model.shortName(Model.hereDisplayName(root.hereData)) : ""
   readonly property bool needsAttention: root.payload ? Model.topAttention(root.payload).length > 0 : false
+  readonly property bool vertical: root.bar ? root.bar.vertical === true : false
+  readonly property string labelText: root.vertical ? "" : root.hereName
 
-  implicitWidth: label.implicitWidth + (attentionDot.visible ? attentionDot.width + Style.spacing.controlGap : 0) + Style.space(12)
+  // Backstory's glyph: md-script_text, an ancient scroll with writing.
+  readonly property string scrollGlyph: String.fromCodePoint(0xF0BC2)
+
+  implicitWidth: button.implicitWidth
   implicitHeight: root.bar ? root.bar.barSize : Style.bar.sizeHorizontal
 
   function refresh() {
@@ -82,22 +86,25 @@ Item {
     }
   }
 
-  Rectangle {
-    anchors.fill: parent
-    radius: Style.cornerRadius
-    color: mouse.containsMouse ? Style.hoverFillFor(Commons.Color.foreground, Commons.Color.foreground) : "transparent"
+  TextMetrics {
+    id: labelMetrics
+    font.family: root.bar ? root.bar.fontFamily : Style.font.family
+    font.pixelSize: Style.bar.iconFont
+    text: root.labelText
   }
 
-  MouseArea {
-    id: mouse
+  BarIconButton {
+    id: button
     anchors.fill: parent
-    hoverEnabled: true
-    cursorShape: Qt.PointingHandCursor
-    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-    onClicked: (event) => {
-      if (event.button === Qt.RightButton) {
+    bar: root.bar
+    text: root.scrollGlyph
+    labelText: root.labelText
+    slotSize: Style.bar.iconSlot + (root.labelText !== "" ? labelMetrics.advanceWidth + Style.space(4) : 0)
+    tooltipText: ""
+    onPressed: function(mouseButton) {
+      if (mouseButton === Qt.RightButton) {
         continueAction.continueOn(root.hereProject)
-      } else if (event.button === Qt.MiddleButton) {
+      } else if (mouseButton === Qt.MiddleButton) {
         root.refresh()
       } else {
         Quickshell.execDetached(Launchers.barToggleCommand())
@@ -106,30 +113,25 @@ Item {
     }
   }
 
-  Row {
-    anchors.centerIn: parent
-    spacing: Style.spacing.controlGap
+  // The problem dot at the icon's upper right; the icon is the right end of
+  // the button's centered label-and-icon group.
+  Item {
+    anchors.verticalCenter: button.verticalCenter
+    x: (button.width + width) / 2 - width
+    width: Style.bar.iconCanvas + (root.labelText !== "" ? labelMetrics.advanceWidth + Style.space(4) : 0)
+    height: Style.bar.iconCanvas
 
-    Text {
-      id: label
-      objectName: "barLabel"
-      anchors.verticalCenter: parent.verticalCenter
-      textFormat: Text.PlainText
-      text: root.hereName !== "" ? root.hereName : Glyphs.week()
-      font.family: Style.font.family
-      font.pixelSize: Style.font.body
-      color: Commons.Color.foreground
-    }
-
-    Rectangle {
-      id: attentionDot
+    BorderSurface {
       objectName: "attentionDot"
       visible: root.needsAttention
-      anchors.verticalCenter: parent.verticalCenter
-      width: Style.space(7)
+      width: Style.space(6)
       height: width
       radius: width / 2
-      color: Commons.Color.urgent
+      color: Commons.Color.bar.active
+      anchors.right: parent.right
+      anchors.top: parent.top
+      anchors.rightMargin: -Style.space(1)
+      borderSpec: Border.flat(Commons.Color.popups.background, Style.spacing.hairline)
     }
   }
 }

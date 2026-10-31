@@ -104,13 +104,15 @@ TestCase {
   // bar sits above the icons beside it: it takes the bar's own thickness.
   function test_fills_the_bar_thickness() {
     var widget = start(fixture())
-    widget.bar = { barSize: 31 }
+    widget.bar = { barSize: 31, fontFamily: "sans-serif" }
     compare(widget.implicitHeight, 31)
   }
 
   function test_glyph_only_when_no_here() {
     var widget = start(fixture(function (d) { delete d.here }))
-    act.settled(function () { var l = barLabel(widget); return l !== null && l.text !== "foo" && l.text !== "" }, "glyph-only label never rendered")
+    var glyph = TestUtil.findFirst(widget, function (n) { return n.objectName === "barGlyph" })
+    verify(glyph !== null && glyph.text !== "", "glyph never rendered")
+    verify(barLabel(widget) === null, "label shown with no here project")
   }
 
   function test_left_click_toggles_via_omarchy_shell() {
