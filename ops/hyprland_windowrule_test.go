@@ -108,11 +108,12 @@ func TestHyprlandWindowruleMatchesPanelClass(t *testing.T) {
 	if !regexp.MustCompile(`class\s*=\s*"\^\(org\\\\\.quickshell\)\$"`).MatchString(lua) {
 		t.Error("lua must match class ^(org\\\\.quickshell)$")
 	}
-	if !regexp.MustCompile(`float\s*=\s*true`).MatchString(lua) {
-		t.Error("lua must set float = true")
+	main := mainWindowRule(t)
+	if !regexp.MustCompile(`float\s*=\s*true`).MatchString(main) {
+		t.Error("the window's rule must set float = true")
 	}
-	if !regexp.MustCompile(`size\s*=\s*\{\s*\d+\s*,\s*\d+\s*\}`).MatchString(lua) {
-		t.Error("lua must set a size")
+	if !regexp.MustCompile(`size\s*=\s*\{\s*\d+\s*,\s*\d+\s*\}`).MatchString(main) {
+		t.Error("the window's rule must set a size")
 	}
 	if !regexp.MustCompile(`o\.window\(|hl\.window_rule\(`).MatchString(lua) {
 		t.Error("lua must call o.window or hl.window_rule")
@@ -163,14 +164,26 @@ func TestHyprlandWindowruleHidesThePopOutUntilPlaced(t *testing.T) {
 // (tst_panel_window.qml test_card_fades_in_on_every_open). Hyprland's window
 // animation took about 300 ms to settle.
 func TestHyprlandWindowruleOpensWithoutAnimation(t *testing.T) {
+	if !regexp.MustCompile(`no_anim\s*=\s*true`).MatchString(mainWindowRule(t)) {
+		t.Error("the window's rule must set no_anim = true")
+	}
+}
+
+// mainWindowRule is the body of the window's own rule, o.window(BACKSTORY,
+// {...}), comments stripped: the pop-out rule sets some of the same effects,
+// so a check of the whole file would pass with them gone from this one.
+func mainWindowRule(t *testing.T) string {
+	t.Helper()
 	raw, err := os.ReadFile("hyprland/backstory.lua")
 	if err != nil {
 		t.Fatalf("read backstory.lua: %v", err)
 	}
 	code := regexp.MustCompile(`(?m)--.*$`).ReplaceAllString(string(raw), "")
-	if !regexp.MustCompile(`no_anim\s*=\s*true`).MatchString(code) {
-		t.Error("lua window rule must set no_anim = true")
+	m := regexp.MustCompile(`(?s)o\.window\(BACKSTORY,\s*\{(.*?)\n\}\)`).FindStringSubmatch(code)
+	if m == nil {
+		t.Fatal("no o.window(BACKSTORY, {...}) rule in hyprland/backstory.lua")
 	}
+	return m[1]
 }
 
 // TestHyprlandWindowruleKeepsTheThemesShadow: the window is styled as any
