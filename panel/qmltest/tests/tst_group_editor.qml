@@ -269,11 +269,6 @@ TestCase {
     compare(t.slice(i - 1, i + 2), [Glyphs.back(), "Groups", "0 groups · 1 project this week"])
   }
 
-  function test_header_counts_groups_and_projects() {
-    openGroupEditor()
-    expectHeroStatus("0 groups · 1 project this week")
-  }
-
   function test_header_says_one_group() {
     ProcessController.respond(Launchers.groupListCommand(), {
       stdout: JSON.stringify({

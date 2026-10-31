@@ -15,12 +15,9 @@ import "js/popout.js" as Popout
 Item {
   id: root
 
-  // Owned locally (round 4: no more PanelState singleton — see
-  // BarWidget.qml's own doc comment. BarWidget's click no longer touches
-  // this plugin's own QML state at all; it fires `omarchy-shell shell
-  // toggle backstory.this-week {}` and trusts the host to call back into
-  // the "panel" kind contract's own open()/close()/toggle() below, the
-  // same functions IpcHandler answers).
+  // Owned locally: the host's summon/toggle/hide call open()/close()/
+  // toggle() below (the "panel" kind contract), as IpcHandler does. The bar
+  // widget opens its own popup; its pop-out summons this window.
   property bool opened: false
   // Pinned, the window shows on every workspace (Hyprland's pin); it opens
   // unpinned, on the workspace it opened on.

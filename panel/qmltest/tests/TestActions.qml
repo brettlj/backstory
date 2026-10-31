@@ -178,7 +178,6 @@ QtObject {
 
   // ---- effects ----
 
-  // Wait for a UI condition to hold.
   // Moves the pointer over target (default its centre) and waits for
   // opts.until, the hover's effect, when given. Pair with moveAway(): a
   // cursor left over a row hovers it in the next test's panel.
@@ -193,6 +192,7 @@ QtObject {
     testCase.mouseMove(item, 0, 0)
   }
 
+  // Wait for a UI condition to hold.
   function settled(pred, msg) {
     testCase.tryVerify(pred, root.timeoutMs, msg === undefined ? "condition never settled" : msg)
   }
