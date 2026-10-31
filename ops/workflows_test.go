@@ -128,7 +128,7 @@ func TestWorkflowWritePermissionsOnlyReleaseAndScorecardJobs(t *testing.T) {
 		b, _ := os.ReadFile(f) //nolint:gosec // glob of tracked workflow files
 		for _, s := range writeScopes(string(b)) {
 			base := filepath.Base(f)
-			if !(base == "release.yml" && s == "release") && !(base == "scorecard.yml" && s == "analysis") {
+			if (base != "release.yml" || s != "release") && (base != "scorecard.yml" || s != "analysis") {
 				t.Errorf("%s: write permission held by %q; only release.yml's release job and scorecard.yml's analysis job may", f, s)
 			}
 		}
