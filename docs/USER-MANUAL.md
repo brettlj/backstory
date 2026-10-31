@@ -196,32 +196,21 @@ memory yourself with `backstory recall` and `backstory records`
 
 ## 5. The panel
 
-The panel shows your week at a glance and lets you jump back into any project. It comes two
-ways, with the same content:
+The panel is a pop-up window in the Omarchy desktop that shows your week at a glance and lets
+you jump back into any project.
 
-- **The bar popup**: press **`CTRL + SHIFT + B`**, or click the Backstory icon in the top bar
-  (if you added it; see `panel/README.md`). Without the icon in the bar, the key opens the window
-  instead.
-- **The window**: the popup's **pop-out** button opens it. It's an ordinary window you can move,
-  and it stays open while you use other bar panels. While it's open, **`CTRL + SHIFT + B`**
-  focuses it, and brings it to your workspace if it's on another one; pressed while it has focus,
-  the key closes it, as do its close button and **`Esc`**. Its **pin** button keeps it on every workspace as you move between
-  them (a filled pin); unpinned (an outline pin), it stays on the workspace it opened on, which
-  is how it opens.
-- **More on the popup**: it opens under the bar like Omarchy's own panels. **`Esc`**, a click
-  elsewhere, or a second click on the icon closes it, and **`Tab`** / **`Shift + Tab`** move to
-  the next bar panel. Its **pop-out** button (next to the gear) closes the popup and opens the
-  window where you were (also **`p`**): the same view, project, selection and scroll, including an open
-  Memory view and its expanded records.
+### Opening and closing
 
-Clicking another bar icon while the popup is open closes the popup; click again to open the
-other panel. This is how Omarchy treats every add-on's popup for now.
+- Press **`CTRL + SHIFT + B`**, or
+- click the Backstory icon in the top bar (if you added it; see `panel/README.md`).
+
+Press the same key, click the icon again, or press **`Esc`** to close it.
 
 ### What's on it
 
 From top to bottom:
 
-- **Header**: "Backstory" with what needs you, or else this week's projects and sessions.
+- **Header**: "Backstory" and a one-line summary of the week.
 - **Here card**: the project you're in right now (the folder of your focused terminal), with
   **Continue**, **Terminal** and **Memory** buttons.
 - **NEEDS YOU**: only shown when something needs a look. It can show:
@@ -249,14 +238,9 @@ From top to bottom:
 | Open a terminal in the project's folder | **Terminal** | `t` |
 | See what's saved for that project | **Memory** | `m` |
 | Refresh | | `r` |
-| Groups | gear | `g` |
 | Help (lists the agent tools too) | | `?` |
-| Back to the main view from Memory, Groups or Help | back button | `u` |
-| Bigger / smaller / reset text (window only) | | `Ctrl` + `+` / `Ctrl` + `-` / `Ctrl` + `0` |
-| Open the window where you were (bar popup only) | pop-out button | `p` |
+| Bigger / smaller / reset text | | `Ctrl` + `+` / `Ctrl` + `-` / `Ctrl` + `0` |
 | Close | close button | `Esc` |
-
-The line at the bottom lists the keys for the view you're in.
 
 ### The Memory view
 
@@ -264,8 +248,7 @@ Opens for one project and lists everything saved there, newest first. Each recor
 tier (**You**, **Agent** or **Inferred**), how old it is, and its first line. A mark appears
 if it's not current (for example possibly stale or superseded).
 
-- **Click a record** to read all of it. Or move to it with `j` / `k`, then `→` expands it and
-  `←` folds it.
+- **Click a record** to read all of it.
 - **Edit** opens it in a terminal editor. Saving writes a *new* corrected record that replaces
   the old one, marked as yours. The old one stays in history.
 - **Forget** (on one record) deletes it after you confirm.
@@ -273,16 +256,15 @@ if it's not current (for example possibly stale or superseded).
 - **Forget activity and saved records** at the bottom erases what Backstory recorded for this
   project. Choose **Last hour**, **Today** or **Everything here**. It first shows how many
   sessions, events and records would go, and only deletes after you confirm.
-- **Back**, or **`u`**, returns to the main view.
+- **Back** returns to the main view.
 
 ### Groups
 
 Some projects are really one piece of work, like a website and its API in two folders. A
 **group** shows them as one row in RECENT, with the members underneath.
 
-- Click the **gear** icon (or press `g`), pick a project (or move to it with `j` / `k` and press `Enter`), then
-  pick an existing group or type a new name, and press **+**. The picked project has a check
-  mark.
+- Click the **gear** icon, pick a project, then pick an existing group or type a new name, and
+  press **+**.
 - Or use the command line: `backstory group set <group> --here` from inside the project.
 
 Most projects don't need a group.
