@@ -52,6 +52,7 @@ QtObject {
   }
 
   function space(n) { return Math.max(1, Math.round(n * style.testSpacingScale)) }
+  function spaceReal(n) { return n > 0 ? n * style.testSpacingScale : 0 }
 
   function hoverFillFor(fg, bg) { return Qt.rgba(fg.r, fg.g, fg.b, 0.12) }
 }

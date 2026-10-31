@@ -132,6 +132,9 @@ Item {
     }
 
     Row {
+      // Evens the gap above the strip with the one below it, where the
+      // Next line's own leading adds space.
+      topPadding: Style.spaceReal(1.6)
       spacing: Style.space(2)
 
       Repeater {
