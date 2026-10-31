@@ -67,8 +67,17 @@ Item {
 
   readonly property var records: Records.topRecords(root.payload)
 
+  // The folder the records on show belong to; the host slides Memory in
+  // once they are this folder's, so it never shows another's or an empty
+  // page that is only still loading.
+  readonly property string scope: root.projectKey + "\n" + root.location
+  property string loadedScope: ""
+  property string requestScope: ""
+  readonly property bool ready: root.loadedScope === root.scope
+
   function refresh() {
     if (root.projectKey === "") return
+    root.requestScope = root.scope
     listProcess.command = Launchers.recordsCommand(root.projectKey, root.location, root.showHistory)
     listProcess.running = false
     listProcess.running = true
@@ -91,6 +100,7 @@ Item {
         page.scrollToTop()
       }
       root.shownScope = root.projectKey + "\n" + root.location
+      if (!root.ready) root.payload = ({})
       root.errorText = ""
       root.confirmingId = ""
       root.pendingPurge = null
@@ -241,10 +251,12 @@ Item {
         } catch (e) {
           root.payload = ({})
         }
+        root.loadedScope = root.requestScope
       }
     }
     stderr: StdioCollector { id: listStderr }
     onExited: (exitCode, exitStatus) => {
+      root.loadedScope = root.requestScope
       if (exitCode !== 0) {
         root.fail(listStderr.text.length > 0 ? listStderr.text : ("backstory records exited " + exitCode))
       }
@@ -308,7 +320,8 @@ Item {
       id: header
       showBack: true
       title: root.displayName
-      status: "Memory · " + root.records.length + (root.records.length === 1 ? " saved record" : " saved records")
+      status: !root.ready ? "Memory"
+        : "Memory · " + root.records.length + (root.records.length === 1 ? " saved record" : " saved records")
       onBack: root.closeRequested()
 
       HostButtons {
@@ -343,7 +356,18 @@ Item {
     }
 
     Text {
-      visible: root.records.length === 0
+      visible: !root.ready
+      textFormat: Text.PlainText
+      text: "Loading records\u2026"
+      width: parent.width
+      font.family: Style.font.family
+      font.pixelSize: Style.font.bodySmall
+      color: Qt.darker(Commons.Color.foreground, 1.3)
+      leftPadding: Style.spacing.rowPaddingX
+    }
+
+    Text {
+      visible: root.ready && root.records.length === 0
       textFormat: Text.PlainText
       text: "Nothing saved for " + root.displayName + " yet."
       wrapMode: Text.WordWrap

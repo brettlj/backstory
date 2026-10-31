@@ -46,7 +46,15 @@ Item {
   property bool helpOpen: false
   // Whichever way a view comes in, it lands under a still pointer.
   onGroupEditorOpenChanged: pointerGate.hold()
-  onMemoryOpenChanged: pointerGate.hold()
+  onMemoryOpenChanged: {
+    pointerGate.hold()
+    root.memoryWaitOver = false
+    if (root.memoryOpen) memoryWait.restart()
+  }
+  // Memory slides in once its records are here, or after memoryWait with
+  // "Loading records..." if they are slow; the main view stays till then.
+  property bool memoryWaitOver: false
+  readonly property bool memoryShowing: root.memoryOpen && (memoryPane.ready || root.memoryWaitOver)
   onHelpOpenChanged: pointerGate.hold()
   property string memoryProjectKey: ""
   property string memoryDisplayName: ""
@@ -374,6 +382,12 @@ Item {
 
   PointerGate { id: pointerGate }
 
+  Timer {
+    id: memoryWait
+    interval: 300
+    onTriggered: root.memoryWaitOver = true
+  }
+
   Process {
     id: dataProcess
     command: Launchers.thisWeekCommand()
@@ -418,7 +432,7 @@ Item {
     SlidePage {
       animate: root.slideAnimated
       objectName: "mainPage"
-      current: !root.groupEditorOpen && !root.memoryOpen && !root.helpOpen
+      current: !root.groupEditorOpen && !root.memoryShowing && !root.helpOpen
       side: -1
 
       // The header stays put; HERE, Needs you and Recent scroll.
@@ -582,7 +596,7 @@ Item {
     SlidePage {
       animate: root.slideAnimated
       objectName: "memoryPage"
-      current: root.memoryOpen
+      current: root.memoryShowing
 
       MemoryView {
         id: memoryPane

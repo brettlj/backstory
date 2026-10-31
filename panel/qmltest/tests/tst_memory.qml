@@ -462,6 +462,72 @@ TestCase {
     act.moveAway(panel.testContentItem)
   }
 
+  // ---- Memory slides in once its records are here ----
+
+  // Memory's page while any of it shows (it is hidden while off to the side).
+  function memoryPage() {
+    return TestUtil.findFirst(panel.testContentItem, function (n) { return n.objectName === "memoryPage" })
+  }
+
+  function heldRecords(other) {
+    ProcessController.respond(Launchers.recordsCommand(other ? "other" : projectKey, other ? "/home/x/other" : cwd, false),
+      { stdout: readFixture(recordsGolden), stderr: "", exitCode: 0, held: true })
+  }
+
+  function openPanelMain() {
+    panel.open("{}")
+    tryCompare(panel.view, "loading", false, 2000)
+  }
+
+  function test_memory_waits_for_its_records_before_sliding_in() {
+    heldRecords()
+    openPanelMain()
+    panel.view.openMemory(projectKey, "acme", cwd)
+    wait(100)
+    compare(memoryPage(), null, "Memory slid in before its records came")
+    verify(TestUtil.slideDone(panel.testContentItem, "mainPage"), "the main view moved while Memory waited")
+    compare(ProcessController.release(Launchers.recordsCommand(projectKey, cwd, false)), 1)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") }, "Memory never slid in")
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    verify(recordItem(ids[0]) !== null, "the records are not there")
+  }
+
+  function test_slow_records_slide_in_with_loading_not_the_empty_page() {
+    heldRecords()
+    openPanelMain()
+    panel.view.openMemory(projectKey, "acme", cwd)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") }, "Memory never slid in without its records")
+    verify(texts().indexOf("Loading records\u2026") !== -1, "no loading line: " + JSON.stringify(texts()))
+    verify(!texts().some(function (t) { return t.indexOf("Nothing saved") === 0 }), "the empty page showed while loading")
+    ProcessController.release(Launchers.recordsCommand(projectKey, cwd, false))
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    act.settled(function () { return recordItem(ids[0]) !== null }, "the records never came")
+    verify(texts().indexOf("Loading records\u2026") === -1, "the loading line stayed")
+  }
+
+  function test_another_project_never_shows_the_last_ones_records() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    openMemory(readFixture(recordsGolden))
+    panel.view.showMain()
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "mainPage") }, "main never slid back")
+    heldRecords(true)
+    panel.view.openMemory("other", "other", "/home/x/other")
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") }, "Memory never slid in")
+    verify(recordItem(ids[0]) === null, "the last project's records showed for another")
+  }
+
+  function test_the_same_folder_slides_in_at_once_with_its_records() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    openMemory(readFixture(recordsGolden))
+    panel.view.showMain()
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "mainPage") }, "main never slid back")
+    heldRecords()
+    panel.view.openMemory(projectKey, "acme", cwd)
+    wait(100)
+    verify(memoryPage() !== null, "Memory waited for a refresh of records it had")
+    verify(recordItem(ids[0]) !== null, "the records it had are gone")
+  }
+
   function test_restore_opens_with_history_and_the_record_expanded() {
     var history = readFixture(historyGolden)
     var id = JSON.parse(history).records[0].id

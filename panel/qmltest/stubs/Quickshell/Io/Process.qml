@@ -8,7 +8,8 @@ import QtQuick
 // defaulting to empty stdout/stderr and exit 0 for anything unregistered),
 // feeds it to `stdout`/`stderr`, and fires `exited` — all synchronously, so
 // a QML test never needs to spin an event loop waiting for a real
-// subprocess (see ProcessController.qml's own doc comment).
+// subprocess (see ProcessController.qml's own doc comment). A held
+// response stays `running` until the test releases it.
 QtObject {
   id: proc
 
@@ -25,7 +26,14 @@ QtObject {
 
     ProcessController.recordRun(proc.command, proc.workingDirectory)
     var response = ProcessController.lookup(proc.command)
+    if (response.held) {
+      ProcessController.hold(proc.command, function () { proc.deliver(response) })
+      return
+    }
+    proc.deliver(response)
+  }
 
+  function deliver(response) {
     if (proc.stdout) proc.stdout.text = response.stdout || ""
     if (proc.stderr) proc.stderr.text = response.stderr || ""
 
