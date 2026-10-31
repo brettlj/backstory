@@ -215,6 +215,23 @@ TestCase {
     act.moveAway(panel.testContentItem)
   }
 
+  // The pointer rests on row b while the keys move up, leave and come
+  // back: Groups sliding in under the still pointer isn't a hover.
+  function test_rows_sliding_under_a_still_pointer_keep_the_keys_highlight() {
+    openTwoRows()
+    act.hover(findRow("b"), { x: findRow("b").width / 4, desc: "row b", until: function () { return findRow("b").current } })
+    panel.testKeyItem.forceActiveFocus()
+    act.pressKey(Qt.Key_K)
+    act.settled(function () { return findRow("a").current }, "k never moved the highlight")
+    act.pressKey(Qt.Key_U)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "mainPage") }, "main never slid back")
+    act.pressKey(Qt.Key_G)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "groupsPage") && findRow("b") !== null }, "Groups never came back")
+    wait(200)
+    verify(findRow("a").current, "the row under the still pointer took the highlight")
+    act.moveAway(panel.testContentItem)
+  }
+
   function footerText() {
     var n = TestUtil.findFirst(panel.testContentItem, function (node) { return node.objectName === "footerHint" })
     return n === null ? null : n.text

@@ -44,6 +44,10 @@ Item {
   property bool groupEditorOpen: false
   property bool memoryOpen: false
   property bool helpOpen: false
+  // Whichever way a view comes in, it lands under a still pointer.
+  onGroupEditorOpenChanged: pointerGate.hold()
+  onMemoryOpenChanged: pointerGate.hold()
+  onHelpOpenChanged: pointerGate.hold()
   property string memoryProjectKey: ""
   property string memoryDisplayName: ""
   property string memoryLocation: ""
@@ -288,6 +292,7 @@ Item {
   // their own keys; the row keys act only on the main body. A text field in
   // Groups takes its keys first, so typing there stays text.
   function handleKey(key, modifiers) {
+    pointerGate.hold()
     if (key === Qt.Key_Escape) { root.closeRequested(); return true }
     if (key === Qt.Key_P && root.canPopOut) { root.popOutRequested(); return true }
     if (key === Qt.Key_U && (root.groupEditorOpen || root.memoryOpen || root.helpOpen)) { root.showMain(); return true }
@@ -367,6 +372,8 @@ Item {
 
   ContinueAction { id: continueAction }
 
+  PointerGate { id: pointerGate }
+
   Process {
     id: dataProcess
     command: Launchers.thisWeekCommand()
@@ -374,6 +381,7 @@ Item {
       onStreamFinished: {
         root.loading = false
         root.hasLoaded = true
+        pointerGate.hold()
         try {
           root.weekData = JSON.parse(text || "{}")
           if (root.pendingSelection) root.applyPendingSelection()
@@ -515,7 +523,7 @@ Item {
             onOpenTerminal: (cwd) => root.openTerminal(cwd)
             onContinueRequested: (summary) => root.continueOn(summary)
             onOpenMemory: (projectKey, displayName, cwd) => root.openMemory(projectKey, displayName, cwd)
-            onHoverRow: (summary, agent) => root.selectRow(summary, agent)
+            onHoverRow: (summary, agent) => pointerGate.hover(function () { root.selectRow(summary, agent) })
           }
         }
 
@@ -540,6 +548,7 @@ Item {
 
       GroupEditor {
         id: groupEditor
+        pointer: pointerGate
         width: parent.width
         height: parent.height
         canPopOut: root.canPopOut
@@ -578,6 +587,7 @@ Item {
       MemoryView {
         id: memoryPane
         shown: root.memoryOpen
+        pointer: pointerGate
         width: parent.width
         height: parent.height
         projectKey: root.memoryProjectKey

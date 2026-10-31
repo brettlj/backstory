@@ -52,6 +52,8 @@ Item {
   property bool busy: false
   // The one highlighted record, which the keys act on and hover moves.
   property int cursorIndex: 0
+  // The host's gate: hover moves the highlight only on a real pointer move.
+  property PointerGate pointer: null
 
   // id of the record whose inline "Forget this record?" confirm is open.
   property string confirmingId: ""
@@ -384,7 +386,10 @@ Item {
           anchors.fill: parent
           hoverEnabled: true
           cursorShape: Qt.PointingHandCursor
-          onEntered: root.cursorIndex = rec.index
+          onEntered: {
+            var i = rec.index
+            root.pointer.hover(function () { root.cursorIndex = i })
+          }
           onClicked: root.toggleExpanded(rec.rid)
         }
 

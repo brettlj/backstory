@@ -586,6 +586,53 @@ TestCase {
     act.moveAway(panel.testContentItem)
   }
 
+  // The pointer rests over row 1 while the keys move on, open Memory and
+  // come back: the row sliding back under the still pointer isn't a hover.
+  function test_rows_sliding_under_a_still_pointer_keep_the_keys_selection() {
+    open(payload())
+    var rows = recentRows()
+    act.hover(rows[1], { until: function () { return panel.view.selectedIndex === 1 }, desc: "hovering row 1" })
+    press(Qt.Key_J)
+    act.settledEq(panel.view, "selectedIndex", 2)
+    press(Qt.Key_M)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") }, "Memory never slid in")
+    press(Qt.Key_U)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "mainPage") }, "main never slid back")
+    wait(200)
+    compare(panel.view.selectedIndex, 2)
+    act.moveAway(panel.testContentItem)
+  }
+
+  // j scrolls the list under the still pointer; the rows passing under it
+  // aren't hovers.
+  function test_rows_scrolling_under_a_still_pointer_keep_the_keys_selection() {
+    open(longRecentPayload())
+    var rows = recentRows()
+    act.hover(rows[1], { until: function () { return panel.view.selectedIndex === 1 }, desc: "hovering row 1" })
+    var top = panel.testScroller.contentY
+    var n = 1
+    while (panel.testScroller.contentY === top && n < panel.view.navRows.length - 1) {
+      press(Qt.Key_J)
+      n++
+      act.settledEq(panel.view, "selectedIndex", n)
+    }
+    verify(panel.testScroller.contentY > top, "j never scrolled the list")
+    wait(200)
+    compare(panel.view.selectedIndex, n)
+    act.moveAway(panel.testContentItem)
+  }
+
+  // After a key, the first real move onto another row counts at once.
+  function test_a_real_move_after_a_key_moves_the_selection() {
+    open(payload())
+    var rows = recentRows()
+    act.hover(rows[1], { until: function () { return panel.view.selectedIndex === 1 }, desc: "hovering row 1" })
+    press(Qt.Key_J)
+    act.settledEq(panel.view, "selectedIndex", 2)
+    act.hover(rows[0], { until: function () { return panel.view.selectedIndex === 0 }, desc: "moving onto row 0" })
+    act.moveAway(panel.testContentItem)
+  }
+
   function test_needs_you_shows_the_thing_then_a_label_and_details() {
     open(payload(function (d) {
       d.attention.push({ kind: "possibly-stale-handoff", project_key: "foo", reason: "foo: handoff possibly stale — cargo test failed (exit 101) after it", handoff_id: "h-foo", evidence_ids: ["7"] })

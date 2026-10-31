@@ -424,6 +424,44 @@ TestCase {
     act.moveAway(panel.testContentItem)
   }
 
+  // The pointer rests on the third record while the keys move up, leave
+  // and come back: Memory sliding in under the still pointer isn't a hover.
+  function test_records_sliding_under_a_still_pointer_keep_the_keys_highlight() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    openMemory(readFixture(recordsGolden))
+    act.hover(recordItem(ids[2]), { x: 4, desc: "third record", until: function () { return recordItem(ids[2]).current } })
+    panel.testKeyItem.forceActiveFocus()
+    act.pressKey(Qt.Key_K)
+    act.settled(function () { return recordItem(ids[1]).current }, "k never moved the highlight")
+    act.pressKey(Qt.Key_U)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "mainPage") }, "main never slid back")
+    act.pressKey(Qt.Key_M)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") && recordItem(ids[1]) !== null }, "Memory never came back")
+    wait(200)
+    verify(recordItem(ids[1]).current, "the record under the still pointer took the highlight")
+    act.moveAway(panel.testContentItem)
+  }
+
+  // A click opens Memory with the pointer resting in the main view where a
+  // later record will land (no key held it): the records sliding in under
+  // it aren't hovers.
+  function test_records_sliding_in_under_a_resting_pointer_keep_the_first_highlighted() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    respondRecords(readFixture(recordsGolden))
+    panel.open("{}")
+    tryCompare(panel.view, "loading", false, 2000)
+    act.hover(panel.testContentItem, { x: 100, y: 140 })
+    act.settled(function () { return panel.testContentItem.height > 160 }, "the main view is shorter than the resting spot")
+    var gate = panel.view.resources.filter(function (r) { return r.seenAt !== undefined })[0]
+    act.settled(function () { return gate.seenAt !== null }, "the pointer gate never saw the pointer")
+    panel.view.openMemory(projectKey, "acme", cwd)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") && recordItem(ids[4]) !== null }, "Memory never opened")
+    wait(200)
+    var lit = ids.filter(function (id) { return recordItem(id).current })
+    compare(JSON.stringify(lit), JSON.stringify([ids[0]]))
+    act.moveAway(panel.testContentItem)
+  }
+
   function test_restore_opens_with_history_and_the_record_expanded() {
     var history = readFixture(historyGolden)
     var id = JSON.parse(history).records[0].id
