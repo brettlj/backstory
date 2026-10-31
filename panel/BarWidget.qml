@@ -51,10 +51,11 @@ Ui.Panel {
   readonly property var testPopup: popup
 
   // The popup's pop-out button: close the popup and open the window, which
-  // you can move and which stays open when other bar panels open.
-  function popOut() {
+  // you can move and which stays open when other bar panels open, at the
+  // snapshot the popup's view took just before (where you were in it).
+  function popOut(snapshot) {
     root.close()
-    Quickshell.execDetached(Launchers.windowSummonCommand())
+    Quickshell.execDetached(Launchers.windowSummonCommand(JSON.stringify(snapshot)))
   }
 
   function refresh() {
@@ -170,7 +171,7 @@ Ui.Panel {
         active: root.opened
         canPopOut: true
         onCloseRequested: root.close()
-        onPopOutRequested: root.popOut()
+        onPopOutRequested: root.popOut(view.snapshot())
       }
     }
   }

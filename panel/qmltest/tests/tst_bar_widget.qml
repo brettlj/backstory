@@ -150,10 +150,13 @@ TestCase {
     var view = TestUtil.findFirst(content, function (n) { return n.canPopOut !== undefined })
     verify(view !== null && view.canPopOut === true, "the popup's view offers no pop-out")
     verify(TestUtil.findFirst(content, function (n) { return n.tooltipText === "Pop out" }) !== null, "no pop-out button in the popup")
+    view.helpOpen = true
     view.popOutRequested()
     compare(widget.opened, false)
     var run = act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
-    compare(JSON.stringify(run.command), JSON.stringify(["omarchy-shell", "shell", "summon", "backstory.this-week", "{}"]))
+    compare(JSON.stringify(run.command.slice(0, 4)), JSON.stringify(["omarchy-shell", "shell", "summon", "backstory.this-week"]))
+    // The window opens where the popup was: the snapshot taken before it closed.
+    compare(JSON.parse(run.command[4]).view, "help")
   }
 
   function test_tab_moves_to_the_next_bar_panel() {

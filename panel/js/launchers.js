@@ -35,9 +35,10 @@
 
 // windowSummonCommand opens the plugin's window (its "panel" kind): the
 // shell routes summon to the panel loader for a plugin that is also a bar
-// widget, so this never reopens the bar popup.
-function windowSummonCommand() {
-  return ["omarchy-shell", "shell", "summon", "backstory.this-week", "{}"]
+// widget, so this never reopens the bar popup. payloadJson, when given, is
+// the view snapshot the window opens at (Panel.qml open()).
+function windowSummonCommand(payloadJson) {
+  return ["omarchy-shell", "shell", "summon", "backstory.this-week", payloadJson || "{}"]
 }
 
 function thisWeekCommand() {
