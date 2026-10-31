@@ -46,7 +46,11 @@ Item {
   property real nowMs: Date.now()
 
   // The content's natural height, padding included; the host sizes to it.
-  implicitHeight: contentColumn.implicitHeight + Style.spacing.panelPadding * 2
+  implicitHeight: contentColumn.implicitHeight + Style.spacing.panelPadding
+    + (footer.visible ? root.footerGap + footer.implicitHeight + root.footerBottomMargin : Style.spacing.panelPadding)
+  // The key hints sit in a fixed footer under the scrolling content.
+  readonly property real footerGap: Style.spacing.labelGap * 2
+  readonly property real footerBottomMargin: Style.space(12)
   readonly property Item scrollArea: scroller
 
   // Which group rows are expanded, keyed by group name. Collapsed by
@@ -285,8 +289,14 @@ Item {
 
   Flickable {
     id: scroller
-    anchors.fill: parent
-    anchors.margins: Style.spacing.panelPadding
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: parent.top
+    anchors.bottom: footer.visible ? footer.top : parent.bottom
+    anchors.leftMargin: Style.spacing.panelPadding
+    anchors.rightMargin: Style.spacing.panelPadding
+    anchors.topMargin: Style.spacing.panelPadding
+    anchors.bottomMargin: footer.visible ? root.footerGap : Style.spacing.panelPadding
     contentWidth: width
     contentHeight: contentColumn.implicitHeight
     clip: true
@@ -455,15 +465,6 @@ Item {
           wrapMode: Text.WordWrap
         }
 
-        Text {
-          width: parent.width
-          textFormat: Text.PlainText
-          text: root.footerHint
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
-          color: Qt.darker(Commons.Color.popups.text, 1.3)
-          wrapMode: Text.WordWrap
-        }
       }
 
       GroupEditor {
@@ -490,5 +491,25 @@ Item {
         onChanged: root.refresh()
       }
     }
+  }
+
+  // Declared after the Flickable, so the item tree (and tests reading it)
+  // still starts with the content.
+  Text {
+    id: footer
+    objectName: "footerHint"
+    visible: body.visible
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom
+    anchors.leftMargin: Style.spacing.panelPadding
+    anchors.rightMargin: Style.spacing.panelPadding
+    anchors.bottomMargin: root.footerBottomMargin
+    textFormat: Text.PlainText
+    text: root.footerHint
+    font.family: Style.font.family
+    font.pixelSize: Style.font.caption
+    color: Qt.darker(Commons.Color.popups.text, 1.3)
+    wrapMode: Text.WordWrap
   }
 }
