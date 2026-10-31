@@ -3,6 +3,7 @@ package ops
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -198,5 +199,46 @@ func TestHyprlandWindowruleKeepsTheThemesShadow(t *testing.T) {
 	code := regexp.MustCompile(`(?m)--.*$`).ReplaceAllString(string(raw), "")
 	if regexp.MustCompile(`no_shadow\s*=`).MatchString(code) {
 		t.Error("lua window rule must not set no_shadow: the window takes the theme's shadow")
+	}
+}
+
+// TestHyprlandBindCallsIPCThePanelAnswers: every `omarchy-shell <target>
+// <method>` in the bind (other than the shell's own `shell`) names an IPC
+// target a panel QML file declares, with that function, so renaming either
+// side fails here instead of leaving the key doing nothing (found by review).
+func TestHyprlandBindCallsIPCThePanelAnswers(t *testing.T) {
+	raw, err := os.ReadFile("hyprland/backstory.lua")
+	if err != nil {
+		t.Fatalf("read backstory.lua: %v", err)
+	}
+	calls := regexp.MustCompile(`omarchy-shell (\S+) (\w+)`).FindAllStringSubmatch(string(raw), -1)
+	files, err := filepath.Glob("../panel/*.qml")
+	if err != nil || len(files) == 0 {
+		t.Fatalf("no panel QML files: %v", err)
+	}
+	checked := 0
+	for _, c := range calls {
+		target, method := c[1], c[2]
+		if target == "shell" {
+			continue
+		}
+		checked++
+		handler := regexp.MustCompile(`(?s)target:\s*"` + regexp.QuoteMeta(target) + `"(.*?)\n  \}`)
+		found := false
+		for _, f := range files {
+			b, err := os.ReadFile(f) //nolint:gosec // this repo's own panel files
+			if err != nil {
+				t.Fatal(err)
+			}
+			if m := handler.FindSubmatch(b); m != nil && regexp.MustCompile(`function\s+`+method+`\s*\(`).Match(m[1]) {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("the bind calls %s %s, but no panel QML file declares that IPC target and function", target, method)
+		}
+	}
+	if checked < 2 {
+		t.Fatalf("checked only %d IPC calls in the bind; the pattern is not reading it", checked)
 	}
 }
