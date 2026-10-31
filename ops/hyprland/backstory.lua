@@ -23,7 +23,7 @@ o.window(BACKSTORY, {
   no_shadow = true,
 })
 
--- Keybind: toggle the This Week panel (the bar widget runs this same command).
+-- Keybind: toggle the This Week window (a click on the bar widget opens its own popup).
 -- Change BACKSTORY_BIND to taste; `hl` is Hyprland's own Lua global.
 local BACKSTORY_BIND = "CTRL + SHIFT + B"
 hl.bind(BACKSTORY_BIND, hl.dsp.exec_cmd("omarchy-shell shell toggle backstory.this-week '{}'"), { description = "Backstory This Week" })
