@@ -15,6 +15,16 @@ import (
 
 const realSHA = "1e5516887975bbc2a7a3bb403adb0d53cbcb5795a95a469380ffc9389a844ecf"
 
+// measuredTarballSHA is the sha256 of each release's GitHub tag tarball
+// (https://github.com/RidgetopAi/backstory/archive/refs/tags/v<ver>.tar.gz),
+// measured with curl | sha256sum after the tag was pushed (RELEASING.md step 3).
+// A release adds its row; TestRealAURFiles fails until it does, so the
+// PKGBUILD can never carry an unmeasured or stale digest.
+var measuredTarballSHA = map[string]string{
+	"1.1.0": realSHA,
+	"1.2.0": "62f5bab6caa2afaa5cb816646eee6dc66084f72fdd946866837b81a8635e2f3d",
+}
+
 // runReleaseCheck copies the real Makefile and ops/release-check.sh into a
 // scratch directory alongside the given CHANGELOG.md / PKGBUILD content,
 // then runs `make release-check VERSION=<version>` from that directory so
@@ -187,8 +197,11 @@ func TestRealAURFiles(t *testing.T) {
 	if got := field(srcinfo, `(?m)^\s*sha256sums = (.*)$`); got != sha {
 		t.Errorf(".SRCINFO sha256sums %q != PKGBUILD %q", got, sha)
 	}
-	if sha != realSHA {
-		t.Errorf("PKGBUILD sha256sums %q != measured v1.1.0 tarball sha", sha)
+	want, ok := measuredTarballSHA[pkgver]
+	if !ok {
+		t.Errorf("no measured tarball sha for pkgver %s: add it to measuredTarballSHA (RELEASING.md step 3)", pkgver)
+	} else if sha != want {
+		t.Errorf("PKGBUILD sha256sums %q != measured v%s tarball sha %q", sha, pkgver, want)
 	}
 
 	cmd := exec.Command("make", "release-check", "VERSION=v"+pkgver) //nolint:gosec // pkgver read from the repo's own PKGBUILD
