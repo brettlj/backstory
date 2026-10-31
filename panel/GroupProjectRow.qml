@@ -27,12 +27,15 @@ Item {
   implicitWidth: parent ? parent.width : Style.space(320)
   implicitHeight: Style.space(28)
 
+  // Drawn like the main view's selected row (ProjectRow.qml): one highlight,
+  // no second fill under the mouse.
   Rectangle {
+    objectName: "groupRowBackground"
     anchors.fill: parent
     radius: Style.cornerRadius
-    color: root.selected
-      ? Util.alpha(Commons.Color.accent, 0.25)
-      : (rowMouse.containsMouse ? Style.hoverFillFor(Commons.Color.foreground, Commons.Color.foreground) : "transparent")
+    color: root.selected ? Util.alpha(Commons.Color.accent, 0.18) : "transparent"
+    border.width: root.selected ? 1 : 0
+    border.color: Commons.Color.accent
   }
 
   MouseArea {

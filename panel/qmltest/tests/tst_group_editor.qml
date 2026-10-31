@@ -144,6 +144,23 @@ TestCase {
     compare(visibleRules().length, 3)
   }
 
+  function rowBackground(key) {
+    return TestUtil.findFirst(findRow(key), function (n) { return n.objectName === "groupRowBackground" })
+  }
+
+  function test_picked_row_looks_like_the_main_views_selection_and_hover_adds_no_fill() {
+    openGroupEditor()
+    act.settled(function () { return findRow(ungroupedProjectKey) !== null }, "project row never rendered")
+    var row = findRow(ungroupedProjectKey)
+    var area = TestUtil.findFirst(row, function (n) { return n.hoverEnabled === true && n.containsMouse !== undefined })
+    act.hover(row, { x: row.width / 4, until: function () { return area.containsMouse }, desc: "hovering the project row" })
+    compare(rowBackground(ungroupedProjectKey).color.a, 0, "hover drew a fill")
+    pickUngroupedProject()
+    compare(rowBackground(ungroupedProjectKey).border.width, 1)
+    // A cursor left over a row would hover it in the next test.
+    act.moveAway(panel.testContentItem)
+  }
+
   function test_header_counts_groups_and_projects() {
     openGroupEditor()
     expectHeroStatus("0 groups · 1 project this week")
