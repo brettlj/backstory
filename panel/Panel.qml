@@ -266,8 +266,10 @@ Item {
   }
 
   // Focus the window, first moving it to the workspace you are on when it
-  // is elsewhere and not pinned.
+  // is elsewhere and not pinned. Not during a pop-out: the window is still
+  // hidden, and the pop-out focuses it once it shows.
   function bringToFront() {
+    if (root.popping) return
     var t = root.windowToplevel()
     var a = root.windowAddress(t)
     if (a === "") return

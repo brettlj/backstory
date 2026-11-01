@@ -420,6 +420,19 @@ TestCase {
     act.settled(function () { return panel.testKeyItem.visible && !panel.popping }, "the window never showed")
   }
 
+  // A bar click (focus) or the shortcut (toggle) during a pop-out: the
+  // window is still hidden, so nothing focuses it; the pop-out goes on.
+  function test_focus_during_a_pop_out_leaves_the_hidden_window_be() {
+    listWindow(false, 1)
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    panel.open(popOutPayload(popFrom))
+    compare(panel.focusWindow(), "ok")
+    panel.toggle()
+    compare(Hyprland.dispatched, [], "the hidden window was focused")
+    compare(panel.popping, true)
+    act.settled(function () { return panel.testKeyItem.visible && !panel.popping }, "the window never showed")
+  }
+
   // ---- The shortcut (toggle) with the window open ----
   function test_toggle_closes_the_window_when_it_has_focus() {
     listWindow(true, 1)
