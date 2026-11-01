@@ -54,6 +54,7 @@ Item {
   onMemoryOpenChanged: {
     pointerGate.reset()
     root.memoryWaitOver = false
+    if (!root.slideAnimated) Qt.callLater(root.slideAgain)
     if (root.memoryOpen) {
       root.groupEditorOpen = false
       root.helpOpen = false
@@ -225,8 +226,16 @@ Item {
     } else if (state.view === "help") {
       root.helpOpen = true
     }
-    root.slideAnimated = true
+    // A Memory still waiting for its records lands when it comes in.
+    root.slideAnimated = root.memoryOpen && !root.memoryShowing ? false : true
     if (root.hasLoaded && !root.loading) root.applyPendingSelection()
+  }
+
+  // Once a restored Memory that waited has come in, or was left, views
+  // slide again, from the next turn so this change itself lands.
+  onMemoryShowingChanged: if (!root.slideAnimated) Qt.callLater(root.slideAgain)
+  function slideAgain() {
+    if (!root.memoryOpen || root.memoryShowing) root.slideAnimated = true
   }
 
   // Selects the restored row (falling back to the here row when it is gone)

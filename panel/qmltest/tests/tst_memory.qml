@@ -637,6 +637,42 @@ TestCase {
     compare(memoryPage(), null, "Memory showed with Groups")
   }
 
+  // A restore (the pop-out) lands in Memory without a slide, also when its
+  // records come after restore() returns.
+  function test_a_restore_into_memory_lands_without_a_slide_when_its_records_come_late() {
+    heldRecords()
+    openPanelMain()
+    panel.view.restore({ view: "memory", memory: { projectKey: projectKey, displayName: "acme", location: cwd, state: {} } })
+    wait(50)
+    compare(memoryPage(), null, "Memory came in before its records")
+    ProcessController.release(Launchers.recordsCommand(projectKey, cwd, false))
+    verify(TestUtil.slideDone(panel.testContentItem, "memoryPage"), "the restored Memory slid in")
+    act.drain()
+    panel.view.showMain()
+    verify(!TestUtil.slideDone(panel.testContentItem, "mainPage"), "going back after the restore did not slide")
+  }
+
+  // The same when the records are slow enough that Memory comes in to wait.
+  function test_a_restore_into_memory_lands_without_a_slide_when_the_wait_gives_up() {
+    heldRecords()
+    openPanelMain()
+    panel.view.restore({ view: "memory", memory: { projectKey: projectKey, displayName: "acme", location: cwd, state: {} } })
+    act.settled(function () { return memoryPage() !== null }, "Memory never came in to wait")
+    verify(TestUtil.slideDone(panel.testContentItem, "memoryPage"), "the restored Memory slid in")
+    ProcessController.release(Launchers.recordsCommand(projectKey, cwd, false))
+  }
+
+  // Left before its records came, the restored Memory gives the slide back.
+  function test_a_restore_into_memory_left_while_waiting_slides_again() {
+    heldRecords()
+    openPanelMain()
+    panel.view.restore({ view: "memory", memory: { projectKey: projectKey, displayName: "acme", location: cwd, state: {} } })
+    panel.view.helpOpen = true
+    act.drain()
+    panel.view.showMain()
+    verify(!TestUtil.slideDone(panel.testContentItem, "mainPage"), "going back from Help did not slide")
+  }
+
   function test_the_same_folder_slides_in_at_once_with_its_records() {
     var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
     openMemory(readFixture(recordsGolden))
