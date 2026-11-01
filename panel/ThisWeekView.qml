@@ -44,18 +44,30 @@ Item {
   property bool groupEditorOpen: false
   property bool memoryOpen: false
   property bool helpOpen: false
-  // Whichever way a view comes in, it lands under a still pointer.
-  onGroupEditorOpenChanged: pointerGate.reset()
+  // Whichever way a view comes in, it lands under a still pointer. One
+  // view opens at a time, the latest: the main view stays live while
+  // Memory waits for its records, and its gear then opens Groups instead.
+  onGroupEditorOpenChanged: {
+    pointerGate.reset()
+    if (root.groupEditorOpen) { root.memoryOpen = false; root.helpOpen = false }
+  }
   onMemoryOpenChanged: {
     pointerGate.reset()
     root.memoryWaitOver = false
-    if (root.memoryOpen) memoryWait.restart()
+    if (root.memoryOpen) {
+      root.groupEditorOpen = false
+      root.helpOpen = false
+      memoryWait.restart()
+    }
   }
   // Memory slides in once its records are here, or after memoryWait with
   // "Loading records..." if they are slow; the main view stays till then.
   property bool memoryWaitOver: false
   readonly property bool memoryShowing: root.memoryOpen && (memoryPane.ready || root.memoryWaitOver)
-  onHelpOpenChanged: pointerGate.reset()
+  onHelpOpenChanged: {
+    pointerGate.reset()
+    if (root.helpOpen) { root.groupEditorOpen = false; root.memoryOpen = false }
+  }
   property string memoryProjectKey: ""
   property string memoryDisplayName: ""
   property string memoryLocation: ""
@@ -360,7 +372,10 @@ Item {
     root.helpOpen = false
   }
 
+  // Another folder's Memory asked for while one is open (still waiting for
+  // its records, under the main view) opens afresh for the new folder.
   function openMemory(projectKey, displayName, cwd) {
+    root.memoryOpen = false
     root.memoryProjectKey = projectKey
     root.memoryDisplayName = displayName
     root.memoryLocation = cwd

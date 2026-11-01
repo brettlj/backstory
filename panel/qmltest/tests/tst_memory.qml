@@ -607,6 +607,36 @@ TestCase {
     compare(panel.view.memoryView.errorText, "")
   }
 
+  // The main view stays while Memory waits for its records; another row's
+  // Memory clicked then is the one that opens.
+  function test_a_second_memory_while_the_first_waits_opens_the_second() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    heldRecords()
+    ProcessController.respond(Launchers.recordsCommand("other", "/home/x/other", false),
+      { stdout: readFixture(recordsGolden), stderr: "", exitCode: 0 })
+    openPanelMain()
+    panel.view.openMemory(projectKey, "acme", cwd)
+    panel.view.openMemory("other", "other", "/home/x/other")
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") && recordItem(ids[0]) !== null },
+      "the second Memory never opened with its records")
+    compare(panel.view.memoryView.displayName, "other")
+    compare(ProcessController.release(Launchers.recordsCommand(projectKey, cwd, false)), 0, "the first run was left going")
+  }
+
+  // The gear on the main view still showing while Memory waits opens
+  // Groups instead: one view at a time.
+  function test_the_gear_while_memory_waits_opens_groups_alone() {
+    heldRecords()
+    openPanelMain()
+    panel.view.openMemory(projectKey, "acme", cwd)
+    clickByTooltip("Groups", { until: function () { return panel.view.groupEditorOpen } })
+    verify(!panel.view.memoryOpen, "Memory stayed open under Groups")
+    ProcessController.release(Launchers.recordsCommand(projectKey, cwd, false))
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "groupsPage") }, "Groups never slid in")
+    wait(400)
+    compare(memoryPage(), null, "Memory showed with Groups")
+  }
+
   function test_the_same_folder_slides_in_at_once_with_its_records() {
     var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
     openMemory(readFixture(recordsGolden))
