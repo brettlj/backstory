@@ -165,6 +165,17 @@ TestCase {
     compare(widget.opened, false)
   }
 
+  // Real keys: the popup's content takes focus as the popup opens, and its
+  // own key handler sends them to the view (Esc closes).
+  function test_keys_typed_in_the_popup_reach_its_view() {
+    var widget = start(fixture())
+    widget.testPopup.testScene = testCase
+    var content = openPopup(widget)
+    act.settled(function () { return content.activeFocus }, "the popup's content never took focus")
+    act.pressKey(Qt.Key_Escape)
+    compare(widget.opened, false, "Esc typed in the popup did not close it")
+  }
+
   function test_p_pops_out_from_a_sub_view() {
     var widget = start(fixture())
     var content = openPopup(widget)

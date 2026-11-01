@@ -21,11 +21,21 @@ QtObject {
   property real barThickness: 0
   property int gap: 0
   property var screen: null
+  // Tests only: the scene the content shows in (the real one's is its own
+  // layer window), so it can take focus and real key events.
+  property Item testScene: null
 
   readonly property Item loadedContent: _loader.item
   readonly property real loadedContentHeight: loadedContent ? loadedContent.implicitHeight : 0
 
-  onOpenChanged: if (open) contentRequested = true
+  // As the real one: on open, the focus target takes focus on the next turn.
+  onOpenChanged: {
+    if (!open) return
+    if (content) contentRequested = true
+    if (focusTarget) Qt.callLater(function() {
+      if (root.open && root.focusTarget) root.focusTarget.forceActiveFocus()
+    })
+  }
 
   function fittedContentWidth(width, cap) {
     return cap !== undefined && cap > 0 ? Math.min(width, cap) : width
@@ -38,6 +48,7 @@ QtObject {
   property Loader _loader: Loader {
     active: root.content !== null && root.contentRequested
     sourceComponent: root.content
+    parent: root.testScene
     width: root.contentWidth
     height: root.contentHeight
   }
