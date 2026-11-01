@@ -1,4 +1,6 @@
 import QtQuick
+import Quickshell
+import Quickshell.Wayland
 
 // Minimal stand-in for qs.Ui.OverlayWindow, a fresh full-screen layer-shell
 // surface per open in the real shell (so, like PanelWindow.qml in the
@@ -8,8 +10,10 @@ QtObject {
   id: window
 
   property bool shown: false
-  property int shownKeyboardFocus: 0
-  property var mask: null
+  // The real one's defaults: it takes the keyboard, and with no mask (as on
+  // any PanelWindow) the whole surface takes clicks.
+  property int shownKeyboardFocus: WlrKeyboardFocus.Exclusive
+  property Region mask: null
   readonly property bool contentRevealed: window.shown
   readonly property bool visible: window.shown
 

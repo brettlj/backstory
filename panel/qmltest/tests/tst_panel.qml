@@ -3,6 +3,7 @@ import QtTest
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
+import Quickshell.Wayland
 import "testutil.js" as TestUtil
 import "../../js/launchers.js" as Launchers
 import "../../js/glyphs.js" as Glyphs
@@ -346,6 +347,15 @@ TestCase {
     compare(Hyprland.dispatched, [], "the window was placed before the glow lit")
     compare([glow.box.x, glow.box.y, glow.box.width, glow.box.height],
             [popFrom.x - glow.pad, popFrom.y - glow.pad, popFrom.w + glow.pad * 2, popFrom.h + glow.pad * 2])
+  }
+
+  // The glow is an overlay over the whole monitor: it takes neither the
+  // keyboard (the popup and then the window hold it) nor clicks.
+  function test_the_glow_takes_neither_the_keyboard_nor_clicks() {
+    var glow = panel.testGlow
+    compare(glow.shownKeyboardFocus, WlrKeyboardFocus.None, "the glow takes the keyboard")
+    verify(glow.mask !== null, "the glow has no input mask, so it takes every click")
+    compare(glow.mask.item, null, "the glow's input mask is not empty")
   }
 
   function test_glow_goes_when_the_window_never_comes() {
