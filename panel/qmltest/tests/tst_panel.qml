@@ -349,6 +349,34 @@ TestCase {
             [popFrom.x - glow.pad, popFrom.y - glow.pad, popFrom.w + glow.pad * 2, popFrom.h + glow.pad * 2])
   }
 
+  // A monitor right of and below another: `from` is in screen coordinates,
+  // the glow draws on the monitor, so it measures from the monitor's origin.
+  readonly property var popFromOff: ({ x: 4060, y: 394, w: 380, h: 560, bar: 26, gap: 8, monX: 2560, monY: 360, monW: 1920, monH: 1080, edge: "top" })
+
+  function test_glow_lights_around_the_card_on_a_monitor_off_the_origin() {
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    var glow = panel.testGlow
+    panel.open(popOutPayload(popFromOff))
+    act.settled(function () { return glow.box.opacity > 0.99 }, "the glow never lit fully")
+    compare([glow.box.x, glow.box.y, glow.box.width, glow.box.height],
+            [1500 - glow.pad, 34 - glow.pad, 380 + glow.pad * 2, 560 + glow.pad * 2])
+  }
+
+  function test_glow_ends_around_the_window_at_rest_on_a_monitor_off_the_origin() {
+    listWindow(true, 1)
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    var glow = panel.testGlow
+    var wasShown = false
+    glow.shownChanged.connect(function () { if (glow.shown) wasShown = true })
+    panel.open(popOutPayload(popFromOff))
+    act.settled(function () { return wasShown && glow.travels && !glow.shown }, "the glow never travelled and went")
+    // It set out from the card, on the monitor.
+    compare([glow.fromRect.x, glow.fromRect.y, glow.fromRect.width, glow.fromRect.height], [1500, 34, 380, 560])
+    var rest = Popout.restRect(Popout.fromRect(popFromOff), panel.popOutGrow)
+    compare([glow.box.x, glow.box.y, glow.box.width, glow.box.height],
+            [rest.x - 2560 - glow.pad, rest.y - 360 - glow.pad, rest.w + glow.pad * 2, rest.h + glow.pad * 2])
+  }
+
   // The glow is an overlay over the whole monitor: it takes neither the
   // keyboard (the popup and then the window hold it) nor clicks.
   function test_the_glow_takes_neither_the_keyboard_nor_clicks() {

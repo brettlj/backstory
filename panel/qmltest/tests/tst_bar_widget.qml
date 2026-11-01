@@ -227,6 +227,19 @@ TestCase {
     compare(JSON.stringify(payload.from), JSON.stringify({ x: 3700, y: 34, w: widget.testPopup.contentWidth, h: widget.testPopup.drawnHeight, bar: 26, gap: 8, monX: 0, monY: 0, monW: 4096, monH: 2160, edge: "left" }))
   }
 
+  // On a monitor right of and below another, the card's place is in screen
+  // coordinates: the monitor's origin plus where the card sits on it.
+  function test_pop_out_from_a_monitor_off_the_origin_sends_screen_coordinates() {
+    var widget = start(fixture())
+    var content = openPopup(widget)
+    widget.testPopup.screen = { name: "DP-2", x: 2560, y: 360, width: 1920, height: 1080 }
+    widget.testPopup.cardOrigin = Qt.point(1500, 34)
+    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    var run = act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
+    var from = JSON.parse(run.command[4]).from
+    compare([from.x, from.y, from.monX, from.monY, from.monW, from.monH], [4060, 394, 2560, 360, 1920, 1080])
+  }
+
   // The popup stays up until the window, in its place, closes it, so
   // nothing blinks between them.
   function test_popup_stays_up_until_the_window_closes_it() {
