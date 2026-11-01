@@ -60,7 +60,10 @@ Ui.Panel {
   // between them; if the window never does, it closes after popOutGiveUpMs.
   property int popOutGiveUpMs: 1500
 
+  // One pop-out at a time: a second (p twice) would find the window open
+  // but still hidden, and close the popup at once.
   function popOut(snapshot) {
+    if (popOutGiveUp.running) return
     snapshot.from = root.cardOnScreen()
     popOutGiveUp.restart()
     Quickshell.execDetached(Launchers.windowSummonCommand(JSON.stringify(snapshot)))
@@ -97,6 +100,8 @@ Ui.Panel {
     interval: root.popOutGiveUpMs
     onTriggered: root.close()
   }
+  // Closed by hand, the popup is done with its pop-out.
+  onOpenedChanged: if (!root.opened) popOutGiveUp.stop()
 
   function refresh() {
     continueAction.refreshDefaultAgent()

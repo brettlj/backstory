@@ -223,6 +223,38 @@ TestCase {
     act.settledEq(widget, "opened", false)
   }
 
+  function summons() {
+    return Quickshell.execDetachedCalls.filter(function (c) { return c.command[2] === "summon" }).length
+  }
+
+  // p twice (or p then the button) sends one summon: a second would find
+  // the window open but still hidden, and close the popup at once.
+  function test_a_second_pop_out_while_one_is_pending_sends_nothing() {
+    var widget = start(fixture())
+    var content = openPopup(widget)
+    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
+    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    wait(50)
+    compare(summons(), 1, "a second pop-out was sent while the first was pending")
+  }
+
+  // Closed by hand while a pop-out is pending, the popup is done with it: a
+  // pop-out from the popup opened again goes out, and the first one's
+  // give-up does not close the new popup.
+  function test_closing_the_popup_by_hand_ends_its_pending_pop_out() {
+    var widget = start(fixture())
+    widget.popOutGiveUpMs = 300
+    var content = openPopup(widget)
+    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
+    verify(content.handleKey(Qt.Key_Escape, Qt.NoModifier))
+    compare(widget.opened, false)
+    content = openPopup(widget)
+    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    compare(summons(), 2, "the reopened popup's pop-out was not sent")
+  }
+
   function test_tab_moves_to_the_next_bar_panel() {
     var widget = start(fixture())
     widget.bar = fakeBar(26)
