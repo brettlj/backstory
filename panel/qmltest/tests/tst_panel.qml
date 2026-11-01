@@ -134,14 +134,27 @@ TestCase {
     compare(popOutButton(), null)
   }
 
-  function test_window_ignores_p() {
+  function test_window_ignores_o() {
     openWith(readFixture(goldenUrl))
     var asked = 0
     panel.view.popOutRequested.connect(function () { asked++ })
-    verify(!panel.view.handleKey(Qt.Key_P, Qt.NoModifier))
+    verify(!panel.view.handleKey(Qt.Key_O, Qt.NoModifier))
     compare(asked, 0)
-    compare(panel.view.footerHint.indexOf("p pop out"), -1)
+    compare(panel.view.footerHint.indexOf("o pop out"), -1)
   }
+
+  // p pins the window as its pin button does, and the footer says which.
+  function test_window_p_pins() {
+    openWith(readFixture(goldenUrl))
+    var asked = 0
+    panel.view.pinRequested.connect(function () { asked++ })
+    verify(panel.view.footerHint.indexOf("p pin") >= 0, "footer never listed p: " + panel.view.footerHint)
+    verify(panel.view.handleKey(Qt.Key_P, Qt.NoModifier))
+    compare(asked, 1)
+    panel.pinned = true
+    verify(panel.view.footerHint.indexOf("p unpin") >= 0, "footer never listed unpin: " + panel.view.footerHint)
+  }
+
 
   function test_pop_out_button_asks_the_host() {
     panel.view.canPopOut = true

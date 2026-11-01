@@ -294,7 +294,7 @@ TestCase {
 
   function test_footer_lists_the_editors_keys() {
     openGroupEditor()
-    compare(footerText(), "j/k move · Enter pick · u back · Esc close")
+    compare(footerText(), "j/k move · Enter pick · u back · p pin · Esc close")
   }
 
   function test_header_and_rule_stay_put_while_the_projects_scroll() {

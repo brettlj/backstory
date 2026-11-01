@@ -322,7 +322,7 @@ TestCase {
 
   function test_footer_lists_memorys_keys() {
     openMemory(readFixture(recordsGolden))
-    compare(footerText(), "j/k move · → expand · ← fold · u back · Esc close")
+    compare(footerText(), "j/k move · → expand · ← fold · u back · p pin · Esc close")
   }
 
   function test_u_goes_back_to_the_main_view() {

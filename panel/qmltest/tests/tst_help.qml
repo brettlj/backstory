@@ -134,7 +134,7 @@ TestCase {
   function test_footer_lists_helps_keys() {
     press(Qt.Key_Question)
     act.settledEq(panel.view, "helpOpen", true)
-    act.settled(function () { return footerText() === "j/k scroll · u or ? back · Esc close" }, "footer never listed Help's keys; got " + footerText())
+    act.settled(function () { return footerText() === "j/k scroll · u or ? back · p pin · Esc close" }, "footer never listed Help's keys; got " + footerText())
   }
 
   function test_j_and_k_scroll_help() {

@@ -165,9 +165,10 @@ Item {
   readonly property string heroStatus: root.attentionItems.length > 0
     ? root.attentionItems.length + (root.attentionItems.length === 1 ? " needs you" : " need you")
     : root.weekTotals.projects + " projects \u00b7 " + root.weekTotals.sessions + " sessions this week"
-  // Every view's footer ends with the keys the host adds: p where it can
-  // pop out (the bar popup), and Esc.
-  readonly property string closeHint: (root.canPopOut ? "p pop out \u00b7 " : "") + "Esc close"
+  // Every view's footer ends with the keys the host adds: o where it can
+  // pop out (the bar popup), p where it can pin (the window), and Esc.
+  readonly property string closeHint: (root.canPopOut ? "o pop out \u00b7 " : "")
+    + (root.canPin ? (root.pinned ? "p unpin \u00b7 " : "p pin \u00b7 ") : "") + "Esc close"
   readonly property string mainFooterHint: "j/k move \u00b7 \u2192 agents \u00b7 \u2190 fold \u00b7 Enter continue \u00b7 t terminal \u00b7 m memory \u00b7 g groups \u00b7 ? help \u00b7 r refresh \u00b7 " + root.closeHint
   readonly property string footerHint: root.helpOpen ? "j/k scroll \u00b7 u or ? back \u00b7 " + root.closeHint
     : root.memoryOpen ? "j/k move \u00b7 \u2192 expand \u00b7 \u2190 fold \u00b7 u back \u00b7 " + root.closeHint
@@ -356,7 +357,7 @@ Item {
   }
 
   // The content's key handler; returns whether it consumed the key. Esc
-  // asks the host to close; p asks it to pop out, where it can; u goes back
+  // asks the host to close; o asks it to pop out and p to pin, where it can; u goes back
   // from Groups, Memory or Help to the main body; Memory and Groups take
   // their own keys; the row keys act only on the main body. The text field
   // in Groups keeps the keys it takes: text, and Enter (which adds the
@@ -364,7 +365,8 @@ Item {
   function handleKey(key, modifiers) {
     pointerGate.reset()
     if (key === Qt.Key_Escape) { root.closeRequested(); return true }
-    if (key === Qt.Key_P && root.canPopOut) { root.popOutRequested(); return true }
+    if (key === Qt.Key_O && root.canPopOut) { root.popOutRequested(); return true }
+    if (key === Qt.Key_P && root.canPin) { root.pinRequested(); return true }
     if (key === Qt.Key_U && (root.groupEditorOpen || root.memoryOpen || root.helpOpen)) { root.showMain(); return true }
     if (root.memoryOpen) return memoryPane.handleKey(key)
     if (root.groupEditorOpen) return groupEditor.handleKey(key)

@@ -191,13 +191,13 @@ TestCase {
     compare(ipc.enabled, false, "a bar on another monitor answers")
   }
 
-  function test_p_pops_out_from_a_sub_view() {
+  function test_o_pops_out_from_a_sub_view() {
     var widget = start(fixture())
     var content = openPopup(widget)
     var view = TestUtil.findFirst(content, function (n) { return n.canPopOut !== undefined })
     view.memoryOpen = true
-    verify(view.footerHint.indexOf("p pop out") >= 0, "footer never listed p: " + view.footerHint)
-    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    verify(view.footerHint.indexOf("o pop out") >= 0, "footer never listed o: " + view.footerHint)
+    verify(content.handleKey(Qt.Key_O, Qt.NoModifier))
     var run = act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
     compare(JSON.parse(run.command[4]).view, "memory")
   }
@@ -234,7 +234,7 @@ TestCase {
     var content = openPopup(widget)
     widget.testPopup.screen = { name: "DP-2", x: 2560, y: 360, width: 1920, height: 1080 }
     widget.testPopup.cardOrigin = Qt.point(1500, 34)
-    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    verify(content.handleKey(Qt.Key_O, Qt.NoModifier))
     var run = act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
     var from = JSON.parse(run.command[4]).from
     compare([from.x, from.y, from.monX, from.monY, from.monW, from.monH], [4060, 394, 2560, 360, 1920, 1080])
@@ -245,7 +245,7 @@ TestCase {
   function test_popup_stays_up_until_the_window_closes_it() {
     var widget = start(fixture())
     var content = openPopup(widget)
-    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    verify(content.handleKey(Qt.Key_O, Qt.NoModifier))
     act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
     compare(widget.opened, true, "the popup closed before the window took its place")
     widget.closeAfterPopOut()
@@ -257,7 +257,7 @@ TestCase {
     var widget = start(fixture())
     widget.popOutGiveUpMs = 100
     var content = openPopup(widget)
-    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    verify(content.handleKey(Qt.Key_O, Qt.NoModifier))
     compare(widget.opened, true)
     act.settledEq(widget, "opened", false)
   }
@@ -271,9 +271,9 @@ TestCase {
   function test_a_second_pop_out_while_one_is_pending_sends_nothing() {
     var widget = start(fixture())
     var content = openPopup(widget)
-    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    verify(content.handleKey(Qt.Key_O, Qt.NoModifier))
     act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
-    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    verify(content.handleKey(Qt.Key_O, Qt.NoModifier))
     wait(50)
     compare(summons(), 1, "a second pop-out was sent while the first was pending")
   }
@@ -285,12 +285,12 @@ TestCase {
     var widget = start(fixture())
     widget.popOutGiveUpMs = 300
     var content = openPopup(widget)
-    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    verify(content.handleKey(Qt.Key_O, Qt.NoModifier))
     act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
     verify(content.handleKey(Qt.Key_Escape, Qt.NoModifier))
     compare(widget.opened, false)
     content = openPopup(widget)
-    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    verify(content.handleKey(Qt.Key_O, Qt.NoModifier))
     compare(summons(), 2, "the reopened popup's pop-out was not sent")
   }
 
@@ -300,7 +300,7 @@ TestCase {
     var widget = start(fixture())
     widget.popOutGiveUpMs = 300
     var content = openPopup(widget)
-    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    verify(content.handleKey(Qt.Key_O, Qt.NoModifier))
     act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
     verify(content.handleKey(Qt.Key_Escape, Qt.NoModifier))
     compare(widget.opened, false)
