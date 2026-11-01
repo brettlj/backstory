@@ -526,6 +526,42 @@ TestCase {
     verify(recordItem(ids[0]) !== null, "the records are not there")
   }
 
+  // The keys open Memory under a pointer resting on a Recent row; while it
+  // shows "Loading records" the pointer moves over the empty page and stops.
+  // Records then coming in under it are a list change, not a hover.
+  function test_records_coming_in_under_a_pointer_that_moved_while_loading_keep_the_first_highlighted() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    ProcessController.respond(Launchers.thisWeekCommand(), {
+      stdout: JSON.stringify({
+        here: { project_key: projectKey, display_name: "acme", cwd: cwd, source: "focused" },
+        attention: [], week: [],
+        where_left_off: [{ project: { project_key: projectKey, display_name: "acme", cwd: cwd, last_activity: "2026-01-01T00:00:00Z" } },
+                         { project: { project_key: "b", display_name: "b", cwd: "/home/x/b", last_activity: "2026-01-01T00:00:00Z" } }]
+      }), stderr: "", exitCode: 0
+    })
+    heldRecords()
+    openPanelMain()
+    var rows = TestUtil.findAll(panel.testContentItem, function (n) { return n.visible && n.summary && n.stripCounts !== undefined })
+    act.quiescent(function () { return rows.map(function (r) { return r.mapToItem(null, 0, 0).y }) }, "the main view never stopped moving")
+    var row = rows[rows.length - 1]
+    act.hover(row, { until: function () { return row.selected }, desc: "the last Recent row" })
+    var at = row.mapToItem(null, row.width / 2, row.height / 2)
+    panel.view.openMemory(projectKey, "acme", cwd)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") }, "Memory never slid in to wait")
+    at = { x: at.x, y: at.y - 50 }
+    var rest = panel.testContentItem.mapFromItem(null, at.x, at.y)
+    act.hover(panel.testContentItem, { x: rest.x, y: rest.y })
+    ProcessController.release(Launchers.recordsCommand(projectKey, cwd, false))
+    act.settled(function () { return recordItem(ids[4]) !== null }, "the records never came")
+    act.quiescent(function () { return ids.map(function (id) { return recordItem(id).mapToItem(null, 0, 0).y }) }, "the records never stopped moving")
+    var under = ids.filter(function (id) { var r = recordItem(id); var p = r.mapFromItem(null, at.x, at.y); return p.y >= 0 && p.y < r.height })
+    verify(under.length === 1 && under[0] !== ids[0], "no later record came in under the pointer: " + JSON.stringify(under))
+    wait(200)
+    var lit = ids.filter(function (id) { return recordItem(id).current })
+    compare(JSON.stringify(lit), JSON.stringify([ids[0]]))
+    act.moveAway(panel.testContentItem)
+  }
+
   function test_slow_records_slide_in_with_loading_not_the_empty_page() {
     heldRecords()
     openPanelMain()

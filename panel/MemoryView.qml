@@ -246,6 +246,9 @@ Item {
     id: listProcess
     stdout: StdioCollector {
       onStreamFinished: {
+        // New records are a list change, not a hover: the pointer may have
+        // moved over the loading page, and they come in under it.
+        if (root.pointer) root.pointer.reset()
         try {
           root.payload = JSON.parse(text || "{}")
         } catch (e) {
