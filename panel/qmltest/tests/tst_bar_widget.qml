@@ -294,6 +294,21 @@ TestCase {
     compare(summons(), 2, "the reopened popup's pop-out was not sent")
   }
 
+  // The other half: with no pop-out from the reopened popup, the first
+  // one's give-up passes and the popup stays up.
+  function test_a_popup_opened_again_outlives_the_closed_ones_give_up() {
+    var widget = start(fixture())
+    widget.popOutGiveUpMs = 300
+    var content = openPopup(widget)
+    verify(content.handleKey(Qt.Key_P, Qt.NoModifier))
+    act.detachedNext(function (c) { return c.command[2] === "summon" }, "window summon")
+    verify(content.handleKey(Qt.Key_Escape, Qt.NoModifier))
+    compare(widget.opened, false)
+    openPopup(widget)
+    wait(widget.popOutGiveUpMs + 200)
+    verify(widget.opened, "the first pop-out's give-up closed the reopened popup")
+  }
+
   function test_tab_moves_to_the_next_bar_panel() {
     var widget = start(fixture())
     widget.bar = fakeBar(26)
