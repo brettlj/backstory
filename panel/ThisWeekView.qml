@@ -635,6 +635,7 @@ Item {
 
       GroupEditor {
         id: groupEditor
+        shown: root.groupEditorOpen
         pointer: pointerGate
         width: parent.width
         height: parent.height

@@ -78,12 +78,51 @@ TestCase {
     }, { desc: "PanelActionButton with tooltipText " + JSON.stringify(tooltipText) })
   }
 
+  function isGroupList(r) { return ProcessController.keyFor(r.command) === ProcessController.keyFor(Launchers.groupListCommand()) }
+
   function openGroupEditor() {
+    var fetched = ProcessController.runs.filter(isGroupList).length
     clickByTooltip("Groups")
     act.settled(function () { return panel.view.groupEditorOpen }, "group editor never opened")
     act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "groupsPage") }, "the slide into Groups never finished")
-    // The editor fetches its group list on open; its rows exist once that lands.
-    act.launchedNext(function (r) { return ProcessController.keyFor(r.command) === ProcessController.keyFor(Launchers.groupListCommand()) }, "group list fetch")
+    // The editor fetches its group list on each open; its rows exist once that lands.
+    act.launchedCount(isGroupList, fetched + 1, "group list fetch on open")
+  }
+
+  function goBack() {
+    act.clickWhenReady(function () { return TestUtil.findFirst(panel.testContentItem, function (n) { return n.tooltipText === "Back" }) },
+      { desc: "Back", until: function () { return !panel.view.groupEditorOpen } })
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "mainPage") }, "main never slid back")
+  }
+
+  // A project grouped in a terminal shows up the next time Groups opens.
+  function test_groups_fetches_its_list_each_time_it_opens() {
+    openGroupEditor()
+    act.settled(function () { return findRow(ungroupedProjectKey) !== null }, "the first list never showed")
+    goBack()
+    ProcessController.respond(Launchers.groupListCommand(), {
+      stdout: JSON.stringify({ groups: [{ group: "tools" }], ungrouped: [], projects: [{ key: "a", display_name: "a", group: "tools" }] }), stderr: "", exitCode: 0
+    })
+    openGroupEditor()
+    act.settled(function () { return findRow("a") !== null && findRow(ungroupedProjectKey) === null }, "Groups showed the list from its last opening")
+  }
+
+  // The pick, the typed name and an error are one opening's.
+  function test_groups_opens_without_the_last_openings_pick_name_or_error() {
+    openGroupEditor()
+    pickUngroupedProject()
+    typeGroupName("work")
+    ProcessController.respond(Launchers.groupSetCommand("work", ungroupedProjectKey), { stdout: "", stderr: "no such thing", exitCode: 1 })
+    clickByTooltip("Set group")
+    act.settled(function () { return findGroupEditor().errorText === "no such thing" }, "the error never showed")
+    goBack()
+    openGroupEditor()
+    var editor = findGroupEditor()
+    compare(editor.selectedProjectKey, "", "the pick carried over")
+    compare(editor.newGroupName, "", "the name carried over")
+    compare(groupField().text, "", "the field kept the name")
+    compare(editor.errorText, "", "the error carried over")
+    act.moveAway(panel.testContentItem)
   }
 
   function findRow(key) {
@@ -205,7 +244,7 @@ TestCase {
 
   function test_a_project_with_an_empty_key_is_neither_highlighted_nor_picked_first() {
     // A real store can hold a project with an empty key; it must not pass
-    // for "no row highlighted yet". This editor's first list holds one.
+    // for "no row highlighted yet". This editor's list holds one.
     ProcessController.respond(Launchers.groupListCommand(), {
       stdout: JSON.stringify({
         groups: [{ group: "tools" }],
@@ -216,6 +255,7 @@ TestCase {
     })
     var l = editorComponent.createObject(testCase)
     tryCompare(l, "status", Loader.Ready, 2000)
+    l.item.shown = true
     act.settledEq(l.item, "cursorKey", "a")
     var picked = TestUtil.findAll(l.item, function (n) { return n.projectKey !== undefined && n.selected === true })
     compare(picked.length, 0, "the empty-key row shows as picked with nothing picked")
@@ -379,8 +419,6 @@ TestCase {
       }), stderr: "", exitCode: 0
     })
     openGroupEditor()
-    // The editor fetched init()'s list when the panel loaded; fetch this one.
-    findGroupEditor().refresh()
     expectHeroStatus("1 group · 2 projects this week")
   }
 

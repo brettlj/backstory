@@ -102,6 +102,19 @@ Item {
     listProcess.running = true
   }
 
+  // Set while Groups is the view showing. Each opening fetches the list
+  // afresh (a project grouped in a terminal shows up) and starts with no
+  // pick, name or error from the last.
+  property bool shown: false
+  onShownChanged: {
+    if (!root.shown) return
+    root.selectedProjectKey = ""
+    root.newGroupName = ""
+    groupField.text = ""
+    root.errorText = ""
+    root.refresh()
+  }
+
   // "" is no pick, so a project whose key is "" never shows as picked.
   function isPicked(projectKey) {
     return root.selectedProjectKey !== "" && root.selectedProjectKey === projectKey
@@ -200,8 +213,6 @@ Item {
       }
     }
   }
-
-  Component.onCompleted: root.refresh()
 
   implicitWidth: Style.space(360)
   implicitHeight: page.implicitHeight + Style.spacing.panelPadding * 2
