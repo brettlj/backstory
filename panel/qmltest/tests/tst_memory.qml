@@ -370,6 +370,24 @@ TestCase {
     act.settled(function () { return recordItem(ids[0]).expanded }, "Enter never expanded the highlighted record")
   }
 
+  // Deleting the highlighted last record moves the highlight onto the new
+  // last one, and the keys go on acting on it.
+  function test_deleting_the_highlighted_last_record_highlights_the_new_last() {
+    var golden = JSON.parse(readFixture(recordsGolden))
+    var ids = golden.records.map(function (r) { return r.id })
+    openMemory(JSON.stringify(golden))
+    panel.testKeyItem.forceActiveFocus()
+    for (var i = 1; i < ids.length; i++) act.pressKey(Qt.Key_J)
+    act.settled(function () { return recordItem(ids[ids.length - 1]).current }, "j never reached the last record")
+    respondRecords(JSON.stringify({ records: golden.records.slice(0, -1) }))
+    panel.view.memoryView.deleteRecord(ids[ids.length - 1])
+    act.settled(function () { return recordItem(ids[ids.length - 1]) === null }, "the deleted record stayed")
+    var last = ids[ids.length - 2]
+    act.settled(function () { return recordItem(last).current }, "no record highlighted after the last one went")
+    act.pressKey(Qt.Key_Return)
+    act.settled(function () { return recordItem(last).expanded }, "Enter never expanded the new last record")
+  }
+
   function test_going_back_into_the_same_projects_memory_keeps_the_highlight_and_expanded_records() {
     var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
     openMemory(readFixture(recordsGolden))

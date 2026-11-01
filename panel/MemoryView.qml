@@ -66,6 +66,8 @@ Item {
   property var now: function () { return Date.now() }
 
   readonly property var records: Records.topRecords(root.payload)
+  // Fewer records than before (one deleted, history hidden) keep a highlight.
+  onRecordsChanged: if (root.cursorIndex >= root.records.length) root.cursorIndex = Math.max(0, root.records.length - 1)
 
   // The folder the records on show belong to; the host slides Memory in
   // once they are this folder's, so it never shows another's or an empty
