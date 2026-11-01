@@ -465,6 +465,37 @@ TestCase {
     act.moveAway(panel.testContentItem)
   }
 
+  // The pointer leaves a Recent row for the HERE card's Memory button, off
+  // the rows, and opens Memory there: the record that slides in under it
+  // isn't a hover.
+  function test_records_sliding_in_under_the_here_cards_memory_button_keep_the_first_highlighted() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    ProcessController.respond(Launchers.thisWeekCommand(), {
+      stdout: JSON.stringify({
+        here: { project_key: projectKey, display_name: "acme", cwd: cwd, source: "focused" },
+        attention: [], week: [],
+        where_left_off: [{ project: { project_key: projectKey, display_name: "acme", cwd: cwd, last_activity: "2026-01-01T00:00:00Z" } },
+                         { project: { project_key: "b", display_name: "b", cwd: "/home/x/b", last_activity: "2026-01-01T00:00:00Z" } }]
+      }), stderr: "", exitCode: 0
+    })
+    respondRecords(readFixture(recordsGolden))
+    openPanelMain()
+    var rows = TestUtil.findAll(panel.testContentItem, function (n) { return n.visible && n.summary && n.stripCounts !== undefined })
+    var button = TestUtil.findFirst(panel.testContentItem, function (n) { return n.objectName === "hereMemory" })
+    act.quiescent(function () { return [rows[1].mapToItem(null, 0, 0).y, button.mapToItem(null, 0, 0).y] }, "the main view never stopped moving")
+    act.hover(rows[1], { until: function () { return rows[1].selected }, desc: "the second Recent row" })
+    var at = button.mapToItem(null, button.width / 2, button.height / 2)
+    act.hover(button)
+    act.clickWhenReady(button, { desc: "the HERE card's Memory", until: function () { return panel.view.memoryOpen } })
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") && recordItem(ids[4]) !== null }, "Memory never opened")
+    var under = ids.filter(function (id) { var r = recordItem(id); var p = r.mapFromItem(null, at.x, at.y); return p.y >= 0 && p.y < r.height })
+    verify(under.length === 1 && under[0] !== ids[0], "no later record slid in under the button: " + JSON.stringify(under))
+    wait(200)
+    var lit = ids.filter(function (id) { return recordItem(id).current })
+    compare(JSON.stringify(lit), JSON.stringify([ids[0]]))
+    act.moveAway(panel.testContentItem)
+  }
+
   // ---- Memory slides in once its records are here ----
 
   // Memory's page while any of it shows (it is hidden while off to the side).
@@ -544,6 +575,24 @@ TestCase {
     compare(ProcessController.runs.filter(isRecordsRun(false)).length, 0, "fetched without history first")
   }
 
+  // A restore is for the one opening it came with: another project's
+  // Memory after it starts with nothing expanded.
+  function test_a_restore_expands_records_for_one_opening_only() {
+    var id = JSON.parse(readFixture(recordsGolden)).records[0].id
+    respondRecords(readFixture(recordsGolden))
+    panel.open("{}")
+    tryCompare(panel.view, "loading", false, 2000)
+    panel.view.memoryView.restore({ history: false, expanded: [id] })
+    clickByTooltip("Memory", { until: function () { return panel.view.memoryOpen } })
+    act.settled(function () { var r = recordItem(id); return r !== null && r.expanded }, "restored record never shown expanded")
+    panel.view.showMain()
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "mainPage") }, "main never slid back")
+    ProcessController.respond(Launchers.recordsCommand("other", "/home/x/other", false), { stdout: readFixture(recordsGolden), stderr: "", exitCode: 0 })
+    panel.view.openMemory("other", "other", "/home/x/other")
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") && recordItem(id) !== null }, "the other project's Memory never opened")
+    verify(!recordItem(id).expanded, "the restore expanded a record in another project's Memory")
+  }
+
   // ---- The header: back first, the project as the title, then the view
   // and its record count ----
   function test_header_is_back_then_the_project_then_memory_and_the_count() {
@@ -568,6 +617,22 @@ TestCase {
     var titleRight = title.mapToItem(panel.testContentItem, title.width, 0).x
     var buttonsLeft = pin.mapToItem(panel.testContentItem, 0, 0).x
     verify(titleRight <= buttonsLeft, "the title ends at " + titleRight + ", past the buttons at " + buttonsLeft)
+  }
+
+  // The status line under it is cut the same way.
+  function test_a_long_status_line_stops_before_the_header_buttons() {
+    openMemory(readFixture(recordsGolden))
+    var status = TestUtil.findFirst(panel.testContentItem, function (n) { return n.objectName === "heroStatus" && n.text.indexOf("Memory") === 0 })
+    var header = status
+    while (header && header.showBack === undefined) header = header.parent
+    verify(header !== null, "no header above Memory's status line")
+    header.status = "Memory · a status line long enough to run under the header buttons and past them"
+    var pin = TestUtil.findFirst(panel.testContentItem, function (n) { return n.objectName === "pinButton" && n.mapToItem(panel.testContentItem, 0, 0).y < status.mapToItem(panel.testContentItem, 0, 0).y + 40 })
+    verify(pin !== null, "no pin button in Memory's header")
+    act.settled(function () { return status.truncated }, "the long status line was never cut")
+    var statusRight = status.mapToItem(panel.testContentItem, status.width, 0).x
+    var buttonsLeft = pin.mapToItem(panel.testContentItem, 0, 0).x
+    verify(statusRight <= buttonsLeft, "the status line ends at " + statusRight + ", past the buttons at " + buttonsLeft)
   }
 
   function test_header_says_one_saved_record() {

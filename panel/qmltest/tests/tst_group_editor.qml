@@ -151,6 +151,21 @@ TestCase {
     compare(visibleRules().length, 3)
   }
 
+  function test_no_rule_for_an_ungrouped_list_that_is_empty() {
+    ProcessController.respond(Launchers.groupListCommand(), {
+      stdout: JSON.stringify({
+        groups: [{ group: "tools" }],
+        ungrouped: [],
+        projects: [{ key: "a", display_name: "a", group: "tools" }]
+      }), stderr: "", exitCode: 0
+    })
+    openGroupEditor()
+    findGroupEditor().refresh()
+    act.settled(function () { return findRow("a") !== null && findRow(ungroupedProjectKey) === null }, "the grouped row never replaced the ungrouped one")
+    act.drain()
+    compare(visibleRules().length, 2)
+  }
+
   function rowBackground(key) {
     return TestUtil.findFirst(findRow(key), function (n) { return n.objectName === "groupRowBackground" })
   }
@@ -276,6 +291,18 @@ TestCase {
     panel.testKeyItem.forceActiveFocus()
     act.pressKey(Qt.Key_U)
     act.settledEq(panel.view, "groupEditorOpen", false)
+  }
+
+  // A u typed into the group name is text, not back.
+  function test_u_in_the_group_name_is_text() {
+    openGroupEditor()
+    var field = TestUtil.findFirst(panel.testContentItem, function (n) { return n.placeholderText === "group name" })
+    verify(field !== null, "no group-name TextField")
+    field.forceActiveFocus()
+    act.pressKey(Qt.Key_U)
+    act.settledEq(field, "text", "u")
+    act.drain()
+    compare(panel.view.groupEditorOpen, true, "u in the group name went back to the main view")
   }
 
   function test_header_is_back_then_groups_then_the_counts() {

@@ -463,6 +463,13 @@ TestCase {
     compare(panel.view.memoryLocation, "/x/k")
   }
 
+  function test_restore_opens_groups() {
+    open(payload())
+    panel.view.restore({ view: "groups" })
+    compare(panel.view.groupEditorOpen, true)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "groupsPage") }, "Groups never showed")
+  }
+
   function test_restore_ignores_bad_values() {
     open(payload())
     panel.view.restore(null)
@@ -642,6 +649,30 @@ TestCase {
     verify(rowUnderPointer(), "j never scrolled a row under the pointer")
     wait(200)
     compare(panel.view.selectedIndex, n)
+    act.moveAway(panel.testContentItem)
+  }
+
+  // The pointer moves off the rows and rests below them; a reload brings
+  // more rows under it. Rows arriving under a still pointer aren't a hover:
+  // the selection stays where the load put it.
+  function test_rows_reloading_under_a_pointer_resting_below_them_keep_the_loads_selection() {
+    open(payload())
+    var rows = recentRows()
+    act.hover(rows[1], { until: function () { return panel.view.selectedIndex === 1 }, desc: "hovering row 1" })
+    var last = rows[rows.length - 1]
+    var restY = Math.min(last.mapToItem(panel.testScroller, 0, last.height).y + 20, panel.testScroller.height - 5)
+    function rowUnderPointer() {
+      return recentRows().some(function (r) { var p = r.mapFromItem(panel.testScroller, 40, restY); return p.y >= 0 && p.y < r.height })
+    }
+    act.hover(panel.testScroller, { x: 40, y: restY })
+    verify(!rowUnderPointer(), "the pointer rests on a row")
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: JSON.stringify(longRecentPayload()), stderr: "", exitCode: 0 })
+    panel.view.refresh()
+    tryCompare(panel.view, "loading", false, 2000)
+    var loaded = panel.view.selectedIndex
+    act.settled(rowUnderPointer, "the reload never put a row under the pointer")
+    wait(200)
+    compare(panel.view.selectedIndex, loaded)
     act.moveAway(panel.testContentItem)
   }
 
