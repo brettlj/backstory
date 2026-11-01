@@ -406,6 +406,20 @@ TestCase {
     compare(Hyprland.dispatched, [], "the closed window was still moved")
   }
 
+  // A second pop-out (p twice, or p then the button) while the first is
+  // putting the window in place: the popup stays up and the hidden window
+  // is not focused; the first pop-out goes on to show the window.
+  function test_a_second_pop_out_while_one_runs_leaves_it_be() {
+    listWindow(false, 1)
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: readFixture(goldenUrl), stderr: "", exitCode: 0 })
+    panel.open(popOutPayload(popFrom))
+    panel.open(popOutPayload(popFrom))
+    compare(Quickshell.execDetachedCalls, [], "the popup closed before the window was in place")
+    compare(Hyprland.dispatched, [], "the hidden window was focused")
+    compare(panel.popping, true)
+    act.settled(function () { return panel.testKeyItem.visible && !panel.popping }, "the window never showed")
+  }
+
   // ---- The shortcut (toggle) with the window open ----
   function test_toggle_closes_the_window_when_it_has_focus() {
     listWindow(true, 1)

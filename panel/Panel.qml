@@ -83,8 +83,10 @@ Item {
     if (typeof payloadJson === "string" && payloadJson.length <= 65536) {
       try { state = JSON.parse(payloadJson) } catch (e) { state = null }
     }
-    // A pop-out starts before the window maps, so it maps hidden.
-    var from = state && typeof state === "object" ? Popout.fromRect(state.from) : null
+    // A pop-out starts before the window maps, so it maps hidden. A second
+    // one while the first runs (p twice) is let be: the window is still
+    // hidden, and the first closes the popup once the window is in place.
+    var from = state && typeof state === "object" && !root.popping ? Popout.fromRect(state.from) : null
     if (!root.opened && from) root.startPopOut(from)
     // Already open: it takes the popup's view below, comes to the front and
     // closes the popup at once (found by review: it did neither).
