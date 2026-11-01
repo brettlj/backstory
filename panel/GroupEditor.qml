@@ -91,6 +91,9 @@ Item {
   }
   onRowKeysChanged: if (root.rowKeys.indexOf(root.cursorKey) < 0) root.cursorKey = root.rowKeys.length > 0 ? root.rowKeys[0] : null
   property string newGroupName: ""
+  // True while the group-name field has the keys; the host takes them back
+  // when it leaves Groups.
+  readonly property bool typing: groupField.activeFocus
   property string errorText: ""
   property bool busy: false
 

@@ -50,6 +50,9 @@ Item {
   onGroupEditorOpenChanged: {
     pointerGate.reset()
     if (root.groupEditorOpen) { root.memoryOpen = false; root.helpOpen = false }
+    // Left from the group-name field: the keys come back here (and on to
+    // the host's handler), not to a hidden field.
+    else if (groupEditor.typing) root.forceActiveFocus()
   }
   onMemoryOpenChanged: {
     pointerGate.reset()

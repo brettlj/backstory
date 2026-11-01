@@ -338,6 +338,30 @@ TestCase {
     act.moveAway(panel.testContentItem)
   }
 
+  // Back from Groups after typing a name: the main view's keys work again
+  // and type nothing into the hidden field.
+  function test_back_from_the_group_name_gives_the_keys_back_to_the_main_view() {
+    function row(k) { return { project: { project_key: k, display_name: k, cwd: "/x/" + k, last_activity: "2026-01-01T00:00:00Z" } } }
+    ProcessController.respond(Launchers.thisWeekCommand(), {
+      stdout: JSON.stringify({ attention: [], week: [], where_left_off: [row("a"), row("b"), row("c")] }), stderr: "", exitCode: 0
+    })
+    panel.view.refresh()
+    act.settled(function () { return panel.view.navRows.length === 3 }, "the rows never loaded")
+    openGroupEditor()
+    act.clickWhenReady(groupField, { desc: "group-name field", until: function () { return groupField().activeFocus } })
+    act.pressKey(Qt.Key_W)
+    act.settledEq(groupField(), "text", "w")
+    var field = groupField()
+    act.clickWhenReady(function () { return TestUtil.findFirst(panel.testContentItem, function (n) { return n.tooltipText === "Back" }) },
+      { desc: "Back", until: function () { return !panel.view.groupEditorOpen } })
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "mainPage") }, "main never slid back")
+    var before = panel.view.selectedIndex
+    act.pressKey(Qt.Key_J)
+    act.settled(function () { return panel.view.selectedIndex === before + 1 }, "j did nothing after Back from the group name")
+    compare(field.text, "w", "the main view's keys typed into the hidden field")
+    act.moveAway(panel.testContentItem)
+  }
+
   function test_header_is_back_then_groups_then_the_counts() {
     openGroupEditor()
     expectHeroStatus("0 groups · 1 project this week")
