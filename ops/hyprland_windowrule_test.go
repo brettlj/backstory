@@ -82,48 +82,27 @@ func gitLsFilesAtRoot() ([]byte, error) {
 
 // TestHyprlandWindowruleMatchesPanelClass pins tasks 93f7c6fd/2606210b: the
 // shipped Lua windowrule floats and sizes the window, matching class
-// org.quickshell AND the exact title Panel.qml's windowTitle sets.
+// org.quickshell AND the exact title Panel.qml's windowTitle sets. The class
+// and title are read from the rule's own selector, comments stripped, so a
+// title left only in a comment or another rule's class does not pass.
 func TestHyprlandWindowruleMatchesPanelClass(t *testing.T) {
-	qml, err := os.ReadFile("../panel/Panel.qml")
-	if err != nil {
-		t.Fatalf("read Panel.qml: %v", err)
-	}
-	m := regexp.MustCompile(`readonly property string windowTitle: "([^"]+)"`).FindSubmatch(qml)
-	if m == nil {
-		t.Fatal("Panel.qml declares no windowTitle")
-	}
-	title := string(m[1])
-
 	if _, err := os.Stat("hyprland/backstory.conf"); err == nil {
 		t.Error("backstory.conf must not exist (Omarchy uses Lua config)")
 	}
-	raw, err := os.ReadFile("hyprland/backstory.lua")
-	if err != nil {
-		t.Fatalf("read backstory.lua: %v", err)
+	rule := panelWindowRule(t)
+	if class := luaStringField(rule.selector, "class"); class != `^(org\\.quickshell)$` {
+		t.Errorf("the window's rule matches class %s, want ^(org\\\\.quickshell)$", class)
 	}
-	lua := string(raw)
-
-	if !regexp.MustCompile(`title\s*=\s*"\^\(` + regexp.QuoteMeta(title) + `\)\$"`).MatchString(lua) {
-		t.Errorf("lua title pattern does not match Panel.qml windowTitle %q", title)
-	}
-	if !regexp.MustCompile(`class\s*=\s*"\^\(org\\\\\.quickshell\)\$"`).MatchString(lua) {
-		t.Error("lua must match class ^(org\\\\.quickshell)$")
-	}
-	main := mainWindowRule(t)
-	if !regexp.MustCompile(`float\s*=\s*true`).MatchString(main) {
+	if !regexp.MustCompile(`float\s*=\s*true`).MatchString(rule.effects) {
 		t.Error("the window's rule must set float = true")
 	}
-	if !regexp.MustCompile(`size\s*=\s*\{\s*\d+\s*,\s*\d+\s*\}`).MatchString(main) {
+	if !regexp.MustCompile(`size\s*=\s*\{\s*\d+\s*,\s*\d+\s*\}`).MatchString(rule.effects) {
 		t.Error("the window's rule must set a size")
-	}
-	if !regexp.MustCompile(`o\.window\(|hl\.window_rule\(`).MatchString(lua) {
-		t.Error("lua must call o.window or hl.window_rule")
 	}
 	// Task ddbbe8b7: helpers is not a resolvable module on Omarchy (it defines
 	// the global `o`), so a require( call makes hyprland.lua error. Comments
 	// are stripped so the install note may mention require.
-	code := regexp.MustCompile(`(?m)--.*$`).ReplaceAllString(lua, "")
-	if regexp.MustCompile(`\brequire\s*[("']`).MatchString(code) {
+	if regexp.MustCompile(`\brequire\s*[("']`).MatchString(luaCode(t)) {
 		t.Error("lua must not call require( — use the global o")
 	}
 }
@@ -170,19 +149,122 @@ func TestHyprlandWindowruleOpensWithoutAnimation(t *testing.T) {
 	}
 }
 
-// mainWindowRule is the body of the window's own rule, o.window(BACKSTORY,
-// {...}), comments stripped: the pop-out rule sets some of the same effects,
-// so a check of the whole file would pass with them gone from this one.
+// mainWindowRule is the effects of the window's own rule (see
+// panelWindowRule): the pop-out rule sets some of the same effects, so a
+// check of the whole file would pass with them gone from this one.
 func mainWindowRule(t *testing.T) string {
+	t.Helper()
+	return panelWindowRule(t).effects
+}
+
+// panelWindowRule is the one o.window rule whose selector matches exactly
+// the title Panel.qml's windowTitle sets.
+func panelWindowRule(t *testing.T) windowRule {
+	t.Helper()
+	want := "^(" + panelWindowTitle(t) + ")$"
+	var found []windowRule
+	for _, r := range windowRules(t, luaCode(t)) {
+		if title := luaStringField(r.selector, "title"); title == want {
+			found = append(found, r)
+		}
+	}
+	if len(found) != 1 {
+		t.Fatalf("hyprland/backstory.lua has %d o.window rules matching title %q, want 1", len(found), want)
+	}
+	return found[0]
+}
+
+// panelWindowTitle is the title Panel.qml's windowTitle sets.
+func panelWindowTitle(t *testing.T) string {
+	t.Helper()
+	qml, err := os.ReadFile("../panel/Panel.qml")
+	if err != nil {
+		t.Fatalf("read Panel.qml: %v", err)
+	}
+	m := regexp.MustCompile(`readonly property string windowTitle: "([^"]+)"`).FindSubmatch(qml)
+	if m == nil {
+		t.Fatal("Panel.qml declares no windowTitle")
+	}
+	return string(m[1])
+}
+
+// luaCode is hyprland/backstory.lua with its comments stripped.
+func luaCode(t *testing.T) string {
 	t.Helper()
 	raw, err := os.ReadFile("hyprland/backstory.lua")
 	if err != nil {
 		t.Fatalf("read backstory.lua: %v", err)
 	}
-	code := regexp.MustCompile(`(?m)--.*$`).ReplaceAllString(string(raw), "")
-	m := regexp.MustCompile(`(?s)o\.window\(BACKSTORY,\s*\{(.*?)\n\}\)`).FindStringSubmatch(code)
+	return regexp.MustCompile(`(?m)--.*$`).ReplaceAllString(string(raw), "")
+}
+
+// windowRule is one o.window(selector, effects) call: the inside of the
+// selector table (or of the local table the call names) and of the effects
+// table.
+type windowRule struct{ selector, effects string }
+
+// windowRules reads every o.window(...) call in code. Tables are matched by
+// their braces, so nested tables and one-line rules read as Lua reads them.
+func windowRules(t *testing.T, code string) []windowRule {
+	t.Helper()
+	var rules []windowRule
+	ident := regexp.MustCompile(`^[A-Za-z_]\w*`)
+	comma := regexp.MustCompile(`^\s*,\s*`)
+	for _, loc := range regexp.MustCompile(`\bo\.window\(\s*`).FindAllStringIndex(code, -1) {
+		rest := code[loc[1]:]
+		var sel string
+		if id := ident.FindString(rest); id != "" {
+			def := regexp.MustCompile(`\blocal\s+` + id + `\s*=\s*\{`).FindStringIndex(code)
+			if def == nil {
+				t.Fatalf("o.window(%s, ...) names no local table", id)
+			}
+			sel, _ = luaTable(code[def[1]-1:])
+			rest = rest[len(id):]
+		} else {
+			var n int
+			sel, n = luaTable(rest)
+			rest = rest[n:]
+		}
+		c := comma.FindString(rest)
+		if c == "" {
+			t.Fatalf("an o.window call has no effects table: %.60q", code[loc[0]:])
+		}
+		eff, n := luaTable(rest[len(c):])
+		if n == 0 {
+			t.Fatalf("an o.window call has no effects table: %.60q", code[loc[0]:])
+		}
+		rules = append(rules, windowRule{sel, eff})
+	}
+	return rules
+}
+
+// luaTable is the inside of the table s opens with, and the length of s the
+// table spans; 0 when s does not open with a whole table. Braces inside
+// strings are not told apart (backstory.lua's rules have none).
+func luaTable(s string) (string, int) {
+	if !strings.HasPrefix(s, "{") {
+		return "", 0
+	}
+	depth := 0
+	for i, c := range s {
+		switch c {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return s[1:i], i + 1
+			}
+		}
+	}
+	return "", 0
+}
+
+// luaStringField is the string value of key in a table's inside, or "" when it has none.
+func luaStringField(table, key string) string {
+	m := regexp.MustCompile(`(?:^|[\s,{])` + regexp.QuoteMeta(key) + `\s*=\s*"([^"]*)"`).FindStringSubmatch(table)
 	if m == nil {
-		t.Fatal("no o.window(BACKSTORY, {...}) rule in hyprland/backstory.lua")
+		return ""
 	}
 	return m[1]
 }
