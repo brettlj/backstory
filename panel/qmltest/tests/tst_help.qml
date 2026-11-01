@@ -232,6 +232,22 @@ TestCase {
     }, "item(s) out of bounds with help open: " + JSON.stringify(bad).slice(0, 2000))
   }
 
+  // The latest view asked for opens: Help set open over Groups or Memory
+  // shows alone. No key does that today (keys reach Help only from the main
+  // body, and restore() goes back to it first), so set the view's
+  // helpOpen, as the host may.
+  function test_help_opened_over_groups_or_memory_shows_alone() {
+    press(Qt.Key_G)
+    act.settledEq(panel.view, "groupEditorOpen", true)
+    panel.view.helpOpen = true
+    verify(!panel.view.groupEditorOpen, "Groups stayed open under Help")
+    panel.view.showMain()
+    panel.view.openMemory("one-key", "one", "/home/brian/one")
+    act.settledEq(panel.view, "memoryOpen", true)
+    panel.view.helpOpen = true
+    verify(!panel.view.memoryOpen, "Memory stayed open under Help")
+  }
+
   function test_close_resets_help() {
     press(Qt.Key_Question)
     act.settled(function () { return panel.view.helpOpen }, "help never opened")
