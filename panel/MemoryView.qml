@@ -78,6 +78,9 @@ Item {
   function refresh() {
     if (root.projectKey === "") return
     root.requestScope = root.scope
+    // A run still going is stopped, and ends (a crash, with what it wrote
+    // so far) before the new one starts: that end is not this request's.
+    if (listProcess.running) listProcess.superseded = true
     listProcess.command = Launchers.recordsCommand(root.projectKey, root.location, root.showHistory)
     listProcess.running = false
     listProcess.running = true
@@ -244,8 +247,11 @@ Item {
 
   Process {
     id: listProcess
+    // Set while the run ending next is one refresh() stopped.
+    property bool superseded: false
     stdout: StdioCollector {
       onStreamFinished: {
+        if (listProcess.superseded) return
         // New records are a list change, not a hover: the pointer may have
         // moved over the loading page, and they come in under it.
         if (root.pointer) root.pointer.reset()
@@ -259,6 +265,10 @@ Item {
     }
     stderr: StdioCollector { id: listStderr }
     onExited: (exitCode, exitStatus) => {
+      if (listProcess.superseded) {
+        listProcess.superseded = false
+        return
+      }
       root.loadedScope = root.requestScope
       if (exitCode !== 0) {
         root.fail(listStderr.text.length > 0 ? listStderr.text : ("backstory records exited " + exitCode))

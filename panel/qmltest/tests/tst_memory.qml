@@ -586,6 +586,27 @@ TestCase {
     verify(recordItem(ids[0]) === null, "the last project's records showed for another")
   }
 
+  // Back out of a Memory still loading, into another folder's: the first
+  // run is stopped, and its end (a crash, no output) is not the second
+  // folder's records or its error.
+  function test_a_superseded_records_run_is_not_the_next_folders() {
+    var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
+    heldRecords()
+    heldRecords(true)
+    openPanelMain()
+    panel.view.openMemory(projectKey, "acme", cwd)
+    act.settled(function () { return TestUtil.slideDone(panel.testContentItem, "memoryPage") }, "Memory never slid in to wait")
+    panel.view.showMain()
+    panel.view.openMemory("other", "other", "/home/x/other")
+    act.drain()
+    verify(!panel.view.memoryView.ready, "the stopped run made the other folder's Memory ready")
+    compare(panel.view.memoryView.errorText, "", "the stopped run's end showed as an error")
+    compare(ProcessController.release(Launchers.recordsCommand(projectKey, cwd, false)), 0, "the first run was never stopped")
+    compare(ProcessController.release(Launchers.recordsCommand("other", "/home/x/other", false)), 1)
+    act.settled(function () { return panel.view.memoryView.ready && recordItem(ids[0]) !== null }, "the other folder's records never came")
+    compare(panel.view.memoryView.errorText, "")
+  }
+
   function test_the_same_folder_slides_in_at_once_with_its_records() {
     var ids = JSON.parse(readFixture(recordsGolden)).records.map(function (r) { return r.id })
     openMemory(readFixture(recordsGolden))
