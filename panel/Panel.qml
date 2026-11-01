@@ -347,15 +347,15 @@ Item {
       focus: root.opened
       Keys.onPressed: (event) => { event.accepted = root.handleKey(event.key, event.modifiers) }
 
-      // Everything scales as one: the view is laid out at card size / zoom
-      // and scaled up by zoom, so text, rows and spacing grow together and
-      // the extra height scrolls in the view's Flickable.
       // Only after a pop-out; it grows in as the window does.
       GrabHandle {
         id: handle
         width: card.width
       }
 
+      // Everything scales as one: the view is laid out at card size / zoom
+      // and scaled up by zoom, so text, rows and spacing grow together and
+      // the extra height scrolls in the view's Flickable.
       ThisWeekView {
         id: view
         y: handle.height

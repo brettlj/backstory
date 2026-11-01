@@ -2,7 +2,7 @@
 
 // launchers.js is the ONLY place in this plugin that names an external
 // binary to invoke. Every process this plugin ever spawns is one of the
-// three calls below — nothing else — so `git diff panel/` is enough to
+// calls below — nothing else — so `git diff panel/` is enough to
 // audit that claim by eye (the task's own proof for it) without having to
 // read every .qml file.
 //
@@ -28,6 +28,8 @@
 //     host's own summon (the host shows a plugin panel only through its own
 //     summon/toggle), and `omarchy-shell backstory.this-week.popup close`:
 //     the window, once in the popup's place, closes the popup.
+//   - `omarchy-shell backstory.this-week focus`: the bar icon, while the
+//     window is open, focuses it instead of opening the popup.
 //   - Hyprland dispatch requests (Hyprland.dispatch, not a process): pin,
 //     move, resize and focus the window itself, its address checked by
 //     isWindowAddress first.
