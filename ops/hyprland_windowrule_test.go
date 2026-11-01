@@ -114,26 +114,19 @@ func TestHyprlandWindowruleMatchesPanelClass(t *testing.T) {
 // window sits where the popup's card is (seen 2026-10-31: without it, the
 // border and glow showed for two frames at the window's usual place).
 func TestHyprlandWindowruleHidesThePopOutUntilPlaced(t *testing.T) {
-	qml, err := os.ReadFile("../panel/Panel.qml")
-	if err != nil {
-		t.Fatalf("read Panel.qml: %v", err)
+	want := "^(" + panelWindowTitle(t) + "-popout)$"
+	var effects []string
+	for _, r := range windowRules(t, luaCode(t)) {
+		if title := luaStringField(r.selector, "title"); title == want {
+			effects = append(effects, r.effects)
+		}
 	}
-	m := regexp.MustCompile(`readonly property string windowTitle: "([^"]+)"`).FindSubmatch(qml)
-	if m == nil {
-		t.Fatal("Panel.qml declares no windowTitle")
+	if len(effects) != 1 {
+		t.Fatalf("hyprland/backstory.lua has %d o.window rules matching the pop-out title %q, want 1", len(effects), want)
 	}
-	raw, err := os.ReadFile("hyprland/backstory.lua")
-	if err != nil {
-		t.Fatalf("read backstory.lua: %v", err)
-	}
-	code := regexp.MustCompile(`(?m)--.*$`).ReplaceAllString(string(raw), "")
-	rule := regexp.MustCompile(`(?s)o\.window\(\{[^}]*title\s*=\s*"\^\(` + regexp.QuoteMeta(string(m[1])+"-popout") + `\)\$"\s*\},\s*\{([^}]*)\}\)`).FindStringSubmatch(code)
-	if rule == nil {
-		t.Fatalf("no rule for the pop-out title %q", string(m[1])+"-popout")
-	}
-	for _, want := range []string{`float\s*=\s*true`, `no_anim\s*=\s*true`, `decorate\s*=\s*false`, `no_blur\s*=\s*true`} {
-		if !regexp.MustCompile(want).MatchString(rule[1]) {
-			t.Errorf("the pop-out rule lacks %s:\n%s", want, rule[1])
+	for _, re := range []string{`float\s*=\s*true`, `no_anim\s*=\s*true`, `decorate\s*=\s*false`, `no_blur\s*=\s*true`} {
+		if !regexp.MustCompile(re).MatchString(effects[0]) {
+			t.Errorf("the pop-out rule lacks %s:\n%s", re, effects[0])
 		}
 	}
 }
