@@ -114,10 +114,11 @@ Ui.Panel {
   // The shortcut opens or closes this popup when the window is not open
   // (ops/hyprland/backstory.lua): the shell routes its own summon and
   // toggle to the window. One bar per monitor; the one on the focused
-  // monitor answers.
+  // monitor answers. The popup's screen is its bar's (KeyboardPanel takes
+  // the bar window's), the monitor cardOnScreen() measures too.
   IpcHandler {
     target: "backstory.this-week.popup"
-    enabled: !Hyprland.focusedMonitor || root.Screen.name === "" || root.Screen.name === Hyprland.focusedMonitor.name
+    enabled: !Hyprland.focusedMonitor || !popup.screen || popup.screen.name === Hyprland.focusedMonitor.name
     function toggle(): string {
       root.toggle()
       if (root.opened) root.refresh()

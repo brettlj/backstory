@@ -176,6 +176,21 @@ TestCase {
     compare(widget.opened, false, "Esc typed in the popup did not close it")
   }
 
+  // One bar per monitor, each with the popup's IPC target: only the one on
+  // the focused monitor answers the shortcut.
+  function test_only_the_bar_on_the_focused_monitor_answers_the_shortcut() {
+    var widget = start(fixture())
+    var ipc = null
+    for (var i = 0; i < widget.resources.length; i++)
+      if (widget.resources[i].target === "backstory.this-week.popup") ipc = widget.resources[i]
+    verify(ipc !== null, "no popup IPC target")
+    widget.testPopup.screen = { name: "DP-1", x: 0, y: 0, width: 2560, height: 1440 }
+    Hyprland.focusedMonitor = { name: "DP-1" }
+    compare(ipc.enabled, true, "the bar on the focused monitor does not answer")
+    Hyprland.focusedMonitor = { name: "HDMI-A-1" }
+    compare(ipc.enabled, false, "a bar on another monitor answers")
+  }
+
   function test_p_pops_out_from_a_sub_view() {
     var widget = start(fixture())
     var content = openPopup(widget)
