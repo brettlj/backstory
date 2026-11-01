@@ -274,11 +274,14 @@ TestCase {
     act.settled(function () { return panel.testKeyItem.visible && panel.testWindow.title === "backstory" }, "the window never showed")
     verify(Quickshell.execDetachedCalls.some(function (c) { return JSON.stringify(c.command) === JSON.stringify(Launchers.popupCloseCommand()) }), "the popup was never closed")
     var rest = Popout.restRect(Popout.fromRect(popFrom), panel.popOutGrow)
-    var move = [Launchers.windowAnimDispatch(a, true), Launchers.resizeWindowDispatch(a, rest.w, rest.h), Launchers.moveWindowToDispatch(a, rest.x, rest.y)]
-    act.settled(function () { return Hyprland.dispatched.length >= 5 }, "the window never moved to rest")
-    compare(Hyprland.dispatched.slice(2, 5), move)
-    act.settled(function () { return Hyprland.dispatched.length >= 6 }, "the rule's no_anim never came back")
-    compare(Hyprland.dispatched[5], Launchers.windowAnimDispatch(a, false))
+    // It takes the keyboard back once the popup has closed: the popup's
+    // layer held it, and closing hands it to the window focused before.
+    var move = [Launchers.windowAnimDispatch(a, true), Launchers.resizeWindowDispatch(a, rest.w, rest.h),
+                Launchers.moveWindowToDispatch(a, rest.x, rest.y), Launchers.focusWindowDispatch(a)]
+    act.settled(function () { return Hyprland.dispatched.length >= 6 }, "the window never moved to rest")
+    compare(Hyprland.dispatched.slice(2, 6), move)
+    act.settled(function () { return Hyprland.dispatched.length >= 7 }, "the rule's no_anim never came back")
+    compare(Hyprland.dispatched[6], Launchers.windowAnimDispatch(a, false))
   }
 
   function handleBar() {

@@ -190,6 +190,9 @@ Item {
       handle.shown = true
       Hyprland.dispatch(Launchers.resizeWindowDispatch(a, rest.w, rest.h))
       Hyprland.dispatch(Launchers.moveWindowToDispatch(a, rest.x, rest.y))
+      // The popup has closed by now, and closing its layer handed the
+      // keyboard back to the window focused before it: take it.
+      Hyprland.dispatch(Launchers.focusWindowDispatch(a))
       var f = root.popFrom
       glow.play(Qt.rect(f.x - f.monX, f.y - f.monY, f.w, f.h), Qt.rect(rest.x - f.monX, rest.y - f.monY, rest.w, rest.h))
       popAnimDone.start()
