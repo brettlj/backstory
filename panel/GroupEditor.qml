@@ -141,6 +141,14 @@ Item {
     return null
   }
 
+  // The + is enabled, and Enter in the group name adds the group, once a
+  // project is picked and a name typed.
+  readonly property bool canSubmit: Groups.canSubmitGroup(root.selectedProjectKey, root.newGroupName) && !root.busy
+
+  function submit() {
+    if (root.canSubmit) root.setGroup(root.newGroupName, root.selectedProjectKey)
+  }
+
   function setGroup(groupName, projectKey) {
     if (!Groups.canSubmitGroup(projectKey, groupName)) return
     root.errorText = ""
@@ -374,6 +382,10 @@ Item {
           border.color: Commons.Color.popups.border
         }
         onTextChanged: root.newGroupName = text
+        // Enter here is the form's, never the rows' pick: the field keeps
+        // it rather than let it reach the view's keys.
+        Keys.onReturnPressed: (event) => { root.submit(); event.accepted = true }
+        Keys.onEnterPressed: (event) => { root.submit(); event.accepted = true }
       }
 
       PanelActionButton {
@@ -381,8 +393,8 @@ Item {
         tooltipText: root.selectedProjectKey === "" ? "Pick a project above first" : "Set group"
         foreground: Commons.Color.foreground
         hoverColor: Commons.Color.accent
-        enabled: Groups.canSubmitGroup(root.selectedProjectKey, root.newGroupName) && !root.busy
-        onClicked: root.setGroup(root.newGroupName, root.selectedProjectKey)
+        enabled: root.canSubmit
+        onClicked: root.submit()
       }
     }
 

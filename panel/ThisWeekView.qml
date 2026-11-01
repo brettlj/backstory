@@ -318,8 +318,9 @@ Item {
   // The content's key handler; returns whether it consumed the key. Esc
   // asks the host to close; p asks it to pop out, where it can; u goes back
   // from Groups, Memory or Help to the main body; Memory and Groups take
-  // their own keys; the row keys act only on the main body. A text field in
-  // Groups takes its keys first, so typing there stays text.
+  // their own keys; the row keys act only on the main body. The text field
+  // in Groups keeps the keys it takes: text, and Enter (which adds the
+  // group); the rest (Esc, Up and Down) come here.
   function handleKey(key, modifiers) {
     pointerGate.reset()
     if (key === Qt.Key_Escape) { root.closeRequested(); return true }

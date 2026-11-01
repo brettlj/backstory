@@ -305,6 +305,39 @@ TestCase {
     compare(panel.view.groupEditorOpen, true, "u in the group name went back to the main view")
   }
 
+  function groupField() {
+    return TestUtil.findFirst(panel.testContentItem, function (n) { return n.placeholderText === "group name" })
+  }
+
+  function isGroupSet(r) { return r.command[1] === "group" && r.command[2] === "set" }
+
+  // Enter in the group name is the form's: with nothing picked it neither
+  // picks the highlighted project nor sets a group.
+  function test_enter_in_the_group_name_does_not_pick_the_highlighted_project() {
+    openTwoRows()
+    act.clickWhenReady(groupField, { desc: "group-name field", until: function () { return groupField().activeFocus } })
+    act.pressKey(Qt.Key_W)
+    act.pressKey(Qt.Key_Return)
+    act.settledEq(groupField(), "text", "w")
+    act.drain()
+    compare(findGroupEditor().selectedProjectKey, "", "Enter in the group name picked the highlighted project")
+    compare(ProcessController.runs.filter(isGroupSet).length, 0, "Enter set a group with nothing picked")
+  }
+
+  // With a project picked and a name typed, Enter in the field adds the
+  // group, as the + does.
+  function test_enter_in_the_group_name_adds_the_group() {
+    openTwoRows()
+    act.clickWhenReady(function () { return findRow("b") }, { desc: "row b", until: function () { return findGroupEditor().selectedProjectKey === "b" } })
+    act.clickWhenReady(groupField, { desc: "group-name field", until: function () { return groupField().activeFocus } })
+    act.pressKey(Qt.Key_W)
+    act.settledEq(groupField(), "text", "w")
+    act.pressKey(Qt.Key_Enter)
+    var run = act.launchedNext(isGroupSet, "group set")
+    compare(JSON.stringify(run.command), JSON.stringify(Launchers.groupSetCommand("w", "b")))
+    act.moveAway(panel.testContentItem)
+  }
+
   function test_header_is_back_then_groups_then_the_counts() {
     openGroupEditor()
     expectHeroStatus("0 groups · 1 project this week")
