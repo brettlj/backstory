@@ -1,6 +1,7 @@
 package ops
 
 import (
+	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -322,5 +323,60 @@ func TestHyprlandBindCallsIPCThePanelAnswers(t *testing.T) {
 	}
 	if checked < 2 {
 		t.Fatalf("checked only %d IPC calls in the bind; the pattern is not reading it", checked)
+	}
+}
+
+// TestHyprlandBindTestsForTheWordThePanelAnswers: the bind's first step goes on to
+// the popup unless `omarchy-shell <target> <method>` prints the word it
+// tests for, so that word is what Panel.qml's method returns once it has
+// acted on an open window (its last return). Changing either side alone
+// would leave the key opening the popup over an open window.
+func TestHyprlandBindTestsForTheWordThePanelAnswers(t *testing.T) {
+	m := regexp.MustCompile(`"\$\(omarchy-shell \S+ (\w+)[^)]*\)\\?"\s*=\s*(\w+)`).FindStringSubmatch(luaCode(t))
+	if m == nil {
+		t.Fatal("the bind does not test an omarchy-shell call's output against a word")
+	}
+	method, word := m[1], m[2]
+	qml, err := os.ReadFile("../panel/Panel.qml")
+	if err != nil {
+		t.Fatalf("read Panel.qml: %v", err)
+	}
+	def := regexp.MustCompile(`function\s+` + method + `\s*\(\)\s*\{`).FindIndex(qml)
+	if def == nil {
+		t.Fatalf("Panel.qml defines no function %s() {", method)
+	}
+	body, n := luaTable(string(qml[def[1]-1:]))
+	if n == 0 {
+		t.Fatalf("Panel.qml's %s has no closed body", method)
+	}
+	returns := regexp.MustCompile(`return\s+"(\w+)"`).FindAllStringSubmatch(body, -1)
+	if len(returns) == 0 {
+		t.Fatalf("Panel.qml's %s returns no word:\n%s", method, body)
+	}
+	if last := returns[len(returns)-1][1]; last != word {
+		t.Errorf("the bind tests %s for %q, but Panel.qml's %s answers %q once it acts", method, word, method, last)
+	}
+}
+
+// TestHyprlandBindSummonsThePanelPlugin: the bind's last step summons the
+// plugin by id, which must be the id panel/manifest.json declares, or the
+// key does nothing with no Backstory widget in the bar.
+func TestHyprlandBindSummonsThePanelPlugin(t *testing.T) {
+	m := regexp.MustCompile(`omarchy-shell shell summon (\S+)`).FindStringSubmatch(luaCode(t))
+	if m == nil {
+		t.Fatal("the bind never runs omarchy-shell shell summon")
+	}
+	raw, err := os.ReadFile("../panel/manifest.json")
+	if err != nil {
+		t.Fatalf("read manifest.json: %v", err)
+	}
+	var manifest struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(raw, &manifest); err != nil {
+		t.Fatalf("parse manifest.json: %v", err)
+	}
+	if manifest.ID == "" || m[1] != manifest.ID {
+		t.Errorf("the bind summons %q, but panel/manifest.json's id is %q", m[1], manifest.ID)
 	}
 }
