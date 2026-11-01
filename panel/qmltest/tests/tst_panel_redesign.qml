@@ -550,6 +550,53 @@ TestCase {
     compare(panel.view.selectedIndex, 0)
   }
 
+  // ---- The selection is a row, not a place in the list ----
+  function selectedName() { return panel.view.selectedSummary ? panel.view.selectedSummary.display_name : null }
+
+  function reloadWith(data) {
+    ProcessController.respond(Launchers.thisWeekCommand(), { stdout: JSON.stringify(data), stderr: "", exitCode: 0 })
+    press(Qt.Key_R)
+    tryCompare(panel.view, "loading", false, 2000)
+  }
+
+  function test_expanding_a_row_above_keeps_the_selection_on_its_row() {
+    open(payload())
+    press(Qt.Key_J)
+    press(Qt.Key_J)
+    compare(selectedName(), "projects/notes")
+    act.clickWhenReady(function () { return named("hereAgentChips") },
+      { desc: "the HERE card's agents", until: function () { return panel.view.navRows.length === 4 } })
+    compare(selectedName(), "projects/notes", "expanding foo's agents moved the selection")
+    compare(panel.view.selectedAgent, "")
+    act.moveAway(panel.testContentItem)
+  }
+
+  function test_a_reload_keeps_the_selection_on_its_row() {
+    open(payload())
+    press(Qt.Key_J)
+    compare(selectedName(), "bar")
+    reloadWith(payload(function (d) { d.where_left_off.push(d.where_left_off.splice(1, 1)[0]) }))
+    compare(panel.view.navRows[2].summary.display_name, "bar", "the reload did not move bar")
+    compare(selectedName(), "bar", "the reload moved the selection off its row")
+  }
+
+  function test_a_reload_without_the_selected_row_selects_the_next_one() {
+    open(payload())
+    press(Qt.Key_J)
+    compare(selectedName(), "bar")
+    reloadWith(payload(function (d) { d.where_left_off.splice(1, 1) }))
+    compare(selectedName(), "projects/notes")
+  }
+
+  function test_opening_the_panel_again_selects_here() {
+    open(payload())
+    press(Qt.Key_J)
+    compare(selectedName(), "bar")
+    panel.close()
+    open(payload())
+    compare(selectedName(), "projects/foo")
+  }
+
   function test_keys_select_continue_terminal_memory_and_close() {
     open(payload())
     act.settledEq(panel.view, "selectedIndex", 0)

@@ -137,6 +137,23 @@ Item {
     return out
   }
   property int selectedIndex: 0
+  // The selected row itself, {id, agent}: rows expanding above it or a
+  // reload move its index, not the selection. Null until a load selects.
+  property var selectedKey: null
+  onSelectedIndexChanged: root.rememberSelection()
+  function rememberSelection() {
+    // Read here, not through selectedEntry, which may not have caught up.
+    var e = root.navRows[root.selectedIndex]
+    root.selectedKey = e ? { id: root.rowId(e.summary), agent: e.agent } : null
+  }
+  property var lastNavRows: []
+  onNavRowsChanged: {
+    var old = root.lastNavRows
+    root.lastNavRows = root.navRows
+    if (root.selectedKey === null) return
+    root.selectedIndex = root.indexForKey(root.selectedKey, old)
+    root.rememberSelection()
+  }
   readonly property var selectedEntry: root.selectedIndex >= 0 && root.selectedIndex < root.navRows.length ? root.navRows[root.selectedIndex] : null
   readonly property var selectedSummary: root.selectedEntry ? root.selectedEntry.summary : null
   readonly property string selectedAgent: root.selectedEntry ? root.selectedEntry.agent : ""
@@ -167,15 +184,41 @@ Item {
     return Model.summaryProjectKey(summary) + "\n" + Model.summaryCwd(summary)
   }
 
-  // After new data lands, select the `here` project's row, else the first.
-  function resetSelection() {
-    var idx = 0
-    if (root.hereProject) {
-      for (var i = 0; i < root.navRows.length; i++) {
-        if (root.navRows[i].agent === "" && rowId(root.navRows[i].summary) === rowId(root.hereProject)) { idx = i; break }
+  function indexOfRow(id, agent, rows) {
+    for (var i = 0; i < rows.length; i++) if (rows[i].agent === agent && root.rowId(rows[i].summary) === id) return i
+    return -1
+  }
+
+  // Where the selected row is now; when it is gone, its folder row (for an
+  // agent sub-row), else the nearest row that was around it and still is
+  // (the one after first), else the here row.
+  function indexForKey(key, oldRows) {
+    var i = root.indexOfRow(key.id, key.agent, root.navRows)
+    if (i < 0 && key.agent !== "") i = root.indexOfRow(key.id, "", root.navRows)
+    if (i >= 0) return i
+    var at = root.indexOfRow(key.id, key.agent, oldRows)
+    for (var d = 1; at >= 0 && (at + d < oldRows.length || at - d >= 0); d++) {
+      var near = [oldRows[at + d], oldRows[at - d]]
+      for (var n = 0; n < 2; n++) {
+        if (!near[n]) continue
+        i = root.indexOfRow(root.rowId(near[n].summary), near[n].agent, root.navRows)
+        if (i >= 0) return i
       }
     }
-    root.selectedIndex = idx
+    return root.hereIndex()
+  }
+
+  // The `here` project's row, else the first.
+  function hereIndex() {
+    var i = root.hereProject ? root.indexOfRow(root.rowId(root.hereProject), "", root.navRows) : -1
+    return i < 0 ? 0 : i
+  }
+
+  // Selects the `here` project's row, else the first: the first data of
+  // an opening, or nothing to keep.
+  function resetSelection() {
+    root.selectedIndex = root.hereIndex()
+    root.rememberSelection()
   }
 
   // ---- Snapshot and restore: the bar popup's pop-out opens the window
@@ -251,7 +294,7 @@ Item {
       if (root.rowId(root.navRows[i].summary) === want.id && root.navRows[i].agent === want.agent) { idx = i; break }
     }
     if (idx < 0) root.resetSelection()
-    else root.selectedIndex = idx
+    else { root.selectedIndex = idx; root.rememberSelection() }
     var y = root.pendingScrollY
     root.pendingScrollY = 0
     Qt.callLater(function () {
@@ -266,7 +309,8 @@ Item {
   }
 
   // Expands / collapses a folder row's agent sub-rows. Collapsing while a
-  // sub-row is selected moves the selection back onto the folder row.
+  // sub-row is selected moves the selection back onto the folder row
+  // (indexForKey).
   function setRowExpanded(summary, expanded) {
     var id = root.rowId(summary)
     if (!!root.expandedRows[id] === expanded) return
@@ -274,18 +318,11 @@ Item {
     var next = Object.assign({}, root.expandedRows)
     if (expanded) next[id] = true
     else delete next[id]
-    if (!expanded && root.selectedAgent !== "" && root.selectedId === id) root.selectedIndex -= root.agentIndexOf(summary, root.selectedAgent) + 1
     root.expandedRows = next
   }
 
   function toggleRow(summary) {
     root.setRowExpanded(summary, !root.expandedRows[root.rowId(summary)])
-  }
-
-  function agentIndexOf(summary, agent) {
-    var agents = Model.summaryAgents(summary)
-    for (var i = 0; i < agents.length; i++) if (Model.agentId(agents[i]) === agent) return i
-    return 0
   }
 
   function moveSelection(delta) {
@@ -372,6 +409,8 @@ Item {
   // whichever entry point flipped it.
   onActiveChanged: {
     if (root.active) {
+      // An opening starts on the here row once its data lands.
+      root.selectedKey = null
       root.refresh()
     } else {
       root.showMain()
@@ -431,8 +470,9 @@ Item {
         pointerGate.reset()
         try {
           root.weekData = JSON.parse(text || "{}")
+          // A reload keeps the selected row (onNavRowsChanged).
           if (root.pendingSelection) root.applyPendingSelection()
-          else root.resetSelection()
+          else if (root.selectedKey === null) root.resetSelection()
         } catch (e) {
           root.weekData = null
         }
